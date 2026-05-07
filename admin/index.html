@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin — Pneumologia PE</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2236;--steel:#1e3a52;--sky:#4a90b8;--ice:#e8f4f8;
+  --soft:#f5f8fa;--text:#1a2e3d;--muted:#6b8a9a;--accent:#2e7da6;
+  --green:#25D366;--border:#d0e4ef;--red:#e53e3e;--amber:#d97706;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;color:var(--text);background:var(--soft);font-size:15px;}
+
+/* HEADER */
+header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.header-left h1{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:white;}
+.header-left p{font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px;}
+.header-badge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:5px 14px;font-size:12px;color:rgba(255,255,255,0.7);}
+
+/* LAYOUT */
+.wrap{max-width:860px;margin:0 auto;padding:28px 18px 60px;}
+
+/* SEÇÃO */
+.section-title{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin:28px 0 12px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* CARD CLÍNICA */
+.clinica-card{background:white;border-radius:14px;border:1px solid var(--border);padding:20px 22px;margin-bottom:14px;transition:box-shadow 0.2s;}
+.clinica-card:hover{box-shadow:0 2px 12px rgba(15,34,54,0.08);}
+.clinica-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.clinica-nome{font-weight:600;font-size:15px;color:var(--navy);}
+.clinica-cidade{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* TOGGLE */
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle-label{font-size:12px;color:var(--muted);}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#d1d5db;border-radius:24px;transition:0.2s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.toggle input:checked+.toggle-slider{background:var(--green);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);}
+
+/* STATUS BADGE */
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.status-ativo{background:#dcfce7;color:#166534;}
+.status-suspenso{background:#fee2e2;color:#991b1b;}
+.status-excecao{background:#fef3c7;color:#92400e;}
+
+/* GRID DE CAMPOS */
+.fields-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:540px){.fields-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:380px){.fields-grid{grid-template-columns:1fr;}}
+
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.3px;text-transform:uppercase;}
+.field input,.field select,.field textarea{
+  padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+  background:white;outline:none;transition:border-color 0.15s;
+  -webkit-appearance:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{resize:none;min-height:64px;line-height:1.5;}
+
+/* FREQUÊNCIA CHIPS */
+.freq-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.freq-chip{padding:6px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;color:var(--muted);background:white;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.freq-chip.ativo{border-color:var(--accent);background:var(--ice);color:var(--accent);font-weight:600;}
+
+/* PREVIEW */
+.preview-box{background:var(--navy);border-radius:12px;padding:18px 20px;margin-top:16px;}
+.preview-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sky);margin-bottom:6px;font-weight:600;}
+.preview-data{font-size:16px;font-weight:600;color:white;}
+.preview-turno{font-size:13px;color:rgba(255,255,255,0.6);margin-top:3px;}
+
+/* BOTÃO SALVAR */
+.btn-salvar{
+  width:100%;padding:14px;background:var(--accent);color:white;border:none;
+  border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:16px;
+}
+.btn-salvar:hover{background:var(--navy);}
+.btn-salvar.ok{background:#166534;}
+
+/* EXCEÇÃO CARD */
+.excecao-card{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;margin-top:8px;}
+.excecao-card .fields-grid{grid-template-columns:1fr 1fr;}
+
+/* RESUMO GERAL */
+.resumo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:520px){.resumo-grid{grid-template-columns:repeat(2,1fr);}}
+.resumo-item{background:white;border:1px solid var(--border);border-radius:10px;padding:14px;}
+.resumo-cidade{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.resumo-data{font-size:14px;font-weight:600;color:var(--navy);}
+.resumo-turno{font-size:12px;color:var(--muted);margin-top:2px;}
+.resumo-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+.dot-ativo{background:var(--green);}
+.dot-suspenso{background:var(--red);}
+.dot-excecao{background:var(--amber);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:white;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+footer{text-align:center;font-size:12px;color:var(--muted);padding:24px;border-top:1px solid var(--border);margin-top:20px;}
+
+/* LOGIN */
+.login-wrap{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;padding:24px;}
+.login-box{background:white;border-radius:16px;padding:36px 32px;width:100%;max-width:340px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:28px;}
+.login-box input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:8px;font-size:16px;text-align:center;letter-spacing:4px;outline:none;font-family:'DM Sans',sans-serif;margin-bottom:12px;}
+.login-box input:focus{border-color:var(--accent);}
+.login-box input.erro{border-color:var(--red);animation:shake .3s;}
+.login-btn{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.login-btn:hover{background:var(--navy);}
+.login-erro{font-size:12px;color:var(--red);margin-top:8px;min-height:18px;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.hidden{display:none!important;}
+
+
+/* VALORES */
+.valores-card{background:white;border-radius:14px;border:1px solid var(--border);padding:20px 22px;margin-bottom:14px;}
+.valores-clinica-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0;}
+.valores-clinica-nome{font-weight:600;font-size:15px;color:var(--navy);}
+.valores-body{margin-top:16px;display:none;}
+.valores-body.aberto{display:block;}
+.valor-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--cinza-borda,#e2e6e1);}
+.valor-row:last-child{border-bottom:none;}
+.valor-servico{font-size:14px;color:var(--text);}
+.valor-input{width:100px;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;text-align:right;font-family:'DM Sans',sans-serif;}
+.valor-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.chevron{transition:transform 0.2s;font-size:12px;}
+.chevron.aberto{transform:rotate(180deg);}
+
+</style>
+</head>
+<body>
+
+
+<!-- TELA DE LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">Pneumologia PE</div>
+    <div class="login-sub">Painel administrativo · Acesso restrito</div>
+    <input type="password" id="senha-input" placeholder="••••••" maxlength="20"
+      onkeydown="if(event.key==='Enter')verificarSenha()">
+    <button class="login-btn" onclick="verificarSenha()">Entrar</button>
+    <div class="login-erro" id="login-erro"></div>
+  </div>
+</div>
+
+<script>
+var SENHA_ADMIN = 'pulm@o2026';
+function verificarSenha() {
+  var input = document.getElementById('senha-input');
+  var erro  = document.getElementById('login-erro');
+  if (input.value === SENHA_ADMIN) {
+    document.getElementById('login-wrap').classList.add('hidden');
+    sessionStorage.setItem('pneumo_auth','1');
+  } else {
+    input.classList.add('erro');
+    erro.textContent = 'Senha incorreta.';
+    input.value = '';
+    setTimeout(function(){ input.classList.remove('erro'); }, 400);
+  }
+}
+if (sessionStorage.getItem('pneumo_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', function(){
+    var lw = document.getElementById('login-wrap');
+    if (lw) lw.classList.add('hidden');
+  });
+}
+</script>
+
+<header>
+  <div class="header-left">
+    <h1>Painel de Disponibilidade</h1>
+    <p>Dr. Lucas Pereira de Souza · CRM-PE 9777 · Pneumologia PE</p>
+  </div>
+  <div class="header-badge" id="hora-atual">Carregando...</div>
+</header>
+
+<div class="wrap">
+
+  <!-- RESUMO GERAL -->
+  <div class="section-title">Visão geral de hoje</div>
+  <div class="resumo-grid" id="resumo-grid"></div>
+
+  <!-- CARDS POR CLÍNICA -->
+  <div class="section-title">Configurar disponibilidade por clínica</div>
+  <div id="clinicas-container"></div>
+
+  <!-- EXCEÇÕES -->
+  <div class="section-title">Exceção pontual (feriado, cancelamento, turno extra)</div>
+  <div class="clinica-card">
+    <div class="excecao-card">
+      <div class="fields-grid" style="margin-bottom:12px">
+        <div class="field">
+          <label>Clínica</label>
+          <select id="exc-clinica">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="exc-data">
+        </div>
+        <div class="field">
+          <label>Turno</label>
+          <select id="exc-turno">
+            <option value="cancelado">Cancelado</option>
+            <option value="manha">Manhã</option>
+            <option value="tarde">Tarde</option>
+            <option value="ambos">Dia todo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Observação</label>
+          <input type="text" id="exc-obs" placeholder="Ex: Feriado, turno extra...">
+        </div>
+      </div>
+      <button class="btn-salvar" onclick="salvarExcecao()" style="margin-top:0">
+        ➕ Registrar exceção
+      </button>
+    </div>
+    <div id="excecoes-lista" style="margin-top:14px"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+  <!-- VALORES DE CONSULTA -->
+  <div class="section-title">Valores e exibição por clínica</div>
+  <div id="valores-container"></div>
+
+<footer>
+  Pneumologia PE · Painel administrativo · Alterações salvas localmente no navegador
+</footer>
+
+<script>
+// ── CONFIGURAÇÃO DAS CLÍNICAS ────────────────────────────────────
+const CLINICAS = [
+  {
+    id: 'caruaru',
+    nome: 'Caruaru Clinical Center',
+    cidade: 'Caruaru PE',
+    frequencia: 'semanal',
+    diaSemana: 2, // terça
+    diaNome: 'Terça-feira',
+    turno: 'ambos',
+    horario: '8h às 18h',
+    dataBase: null,
+    ativo: true,
+  },
+  {
+    id: 'limoeiro',
+    nome: 'Clínica Radiológica Magalhães Pedrosa',
+    cidade: 'Limoeiro PE',
+    frequencia: 'quinzenal',
+    diaSemana: 1, // segunda
+    diaNome: 'Segunda-feira',
+    turno: 'manha',
+    horario: '8h às 12h',
+    dataBase: '2026-05-11',
+    ativo: true,
+  },
+  {
+    id: 'carpina',
+    nome: 'Clínica Carpina',
+    cidade: 'Carpina PE',
+    frequencia: 'quinzenal',
+    diaSemana: 1, // segunda
+    diaNome: 'Segunda-feira',
+    turno: 'tarde',
+    horario: '13h às 17h',
+    dataBase: '2026-05-11',
+    ativo: true,
+  },
+  {
+    id: 'palmares',
+    nome: 'Clínica Santa Joana',
+    cidade: 'Palmares PE',
+    frequencia: 'semanal',
+    diaSemana: 5, // sexta
+    diaNome: 'Sexta-feira',
+    turno: 'ambos',
+    horario: '8h às 17h',
+    dataBase: null,
+    ativo: true,
+  },
+  {
+    id: 'gravata',
+    nome: 'Gravatá Clinical Center',
+    cidade: 'Gravatá PE',
+    frequencia: 'quinzenal',
+    diaSemana: 3, // quarta
+    diaNome: 'Quarta-feira',
+    turno: 'manha',
+    horario: '8h às 12h',
+    dataBase: '2026-05-13',
+    ativo: true,
+  },
+  {
+    id: 'jaboatao',
+    nome: 'Clinical+Saúde',
+    cidade: 'Jaboatão Centro PE',
+    frequencia: 'quinzenal',
+    diaSemana: 1, // segunda
+    diaNome: 'Segunda-feira',
+    turno: 'ambos',
+    horario: '8h às 17h',
+    dataBase: '2026-05-18',
+    ativo: true,
+  },
+];
+
+const TURNO_NOME = { manha: 'Manhã', tarde: 'Tarde', ambos: 'Dia todo', cancelado: 'Cancelado' };
+const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const DIAS_SEMANA_FULL = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+
+// ── ESTADO ────────────────────────────────────────────────────────
+let estado = JSON.parse(localStorage.getItem('pneumo_admin') || 'null') || {};
+let excecoes = JSON.parse(localStorage.getItem('pneumo_excecoes') || '[]');
+
+function salvarEstado() {
+  localStorage.setItem('pneumo_admin', JSON.stringify(estado));
+  localStorage.setItem('pneumo_excecoes', JSON.stringify(excecoes));
+}
+
+function getClinica(id) {
+  const base = CLINICAS.find(c => c.id === id);
+  return Object.assign({}, base, estado[id] || {});
+}
+
+// ── CÁLCULO DE PRÓXIMA DATA ────────────────────────────────────────
+function proximaData(clinica) {
+  const hoje = new Date();
+  hoje.setHours(0,0,0,0);
+
+  // Verifica exceção ativa
+  const exc = excecoes.find(e => e.clinicaId === clinica.id && new Date(e.data) >= hoje);
+  if (exc) {
+    return { data: new Date(exc.data + 'T12:00:00'), turno: exc.turno, excecao: exc.obs };
+  }
+
+  if (clinica.frequencia === 'semanal') {
+    const d = new Date(hoje);
+    const diff = (clinica.diaSemana - d.getDay() + 7) % 7;
+    d.setDate(d.getDate() + (diff === 0 ? 7 : diff));
+    return { data: d, turno: clinica.turno };
+  }
+
+  if (clinica.frequencia === 'quinzenal' && clinica.dataBase) {
+    const base = new Date(clinica.dataBase + 'T12:00:00');
+    const d = new Date(base);
+    while (d < hoje) d.setDate(d.getDate() + 14);
+    return { data: d, turno: clinica.turno };
+  }
+
+  return null;
+}
+
+function formatarData(d) {
+  return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// ── RESUMO GERAL ──────────────────────────────────────────────────
+function renderResumo() {
+  const el = document.getElementById('resumo-grid');
+  el.innerHTML = CLINICAS.map(c => {
+    const cl = getClinica(c.id);
+    const prox = proximaData(cl);
+    const dot = !cl.ativo ? 'dot-suspenso' : prox?.excecao ? 'dot-excecao' : 'dot-ativo';
+    const status = !cl.ativo ? 'Suspenso' : prox ? formatarData(prox.data) : '—';
+    const turno = prox ? TURNO_NOME[prox.turno] : '';
+    return `<div class="resumo-item">
+      <div class="resumo-cidade"><span class="resumo-dot ${dot}"></span>${cl.cidade.split(' PE')[0]}</div>
+      <div class="resumo-data">${status}</div>
+      <div class="resumo-turno">${turno}${prox?.excecao ? ' · ⚠️ ' + prox.excecao : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── CARDS POR CLÍNICA ──────────────────────────────────────────────
+function renderCards() {
+  const container = document.getElementById('clinicas-container');
+  const excSelect = document.getElementById('exc-clinica');
+  excSelect.innerHTML = '<option value="">Selecione...</option>';
+
+  container.innerHTML = CLINICAS.map(c => {
+    const cl = getClinica(c.id);
+    const prox = proximaData(cl);
+    const statusClass = cl.ativo ? 'status-ativo' : 'status-suspenso';
+    const statusTxt = cl.ativo ? '● Ativo' : '● Suspenso';
+
+    excSelect.innerHTML += `<option value="${c.id}">${cl.cidade.split(' PE')[0]} — ${cl.nome}</option>`;
+
+    return `
+    <div class="clinica-card" id="card-${c.id}">
+      <div class="clinica-header">
+        <div>
+          <div class="clinica-nome">${cl.nome}</div>
+          <div class="clinica-cidade">${cl.cidade}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="status-badge ${statusClass}">${statusTxt}</span>
+          <div class="toggle-wrap">
+            <span class="toggle-label">${cl.ativo ? 'Ativo' : 'Suspenso'}</span>
+            <label class="toggle">
+              <input type="checkbox" ${cl.ativo ? 'checked' : ''} onchange="toggleAtivo('${c.id}',this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field">
+          <label>Frequência</label>
+          <select onchange="updateCampo('${c.id}','frequencia',this.value)">
+            <option value="semanal" ${cl.frequencia==='semanal'?'selected':''}>Semanal</option>
+            <option value="quinzenal" ${cl.frequencia==='quinzenal'?'selected':''}>Quinzenal</option>
+            <option value="mensal" ${cl.frequencia==='mensal'?'selected':''}>Mensal</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Dia da semana</label>
+          <select onchange="updateCampo('${c.id}','diaSemana',parseInt(this.value))">
+            ${[1,2,3,4,5,6].map(d=>`<option value="${d}" ${cl.diaSemana===d?'selected':''}>${DIAS_SEMANA_FULL[d]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Turno</label>
+          <select onchange="updateCampo('${c.id}','turno',this.value)">
+            <option value="manha" ${cl.turno==='manha'?'selected':''}>Manhã</option>
+            <option value="tarde" ${cl.turno==='tarde'?'selected':''}>Tarde</option>
+            <option value="ambos" ${cl.turno==='ambos'?'selected':''}>Dia todo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Horário</label>
+          <input type="text" value="${cl.horario}" placeholder="Ex: 8h às 12h"
+            onchange="updateCampo('${c.id}','horario',this.value)">
+        </div>
+        <div class="field">
+          <label>Data base (quinzenal)</label>
+          <input type="date" value="${cl.dataBase||''}"
+            onchange="updateCampo('${c.id}','dataBase',this.value)">
+        </div>
+      </div>
+
+      ${prox ? `
+      <div class="preview-box">
+        <div class="preview-label">Preview — o que o paciente verá</div>
+        <div class="preview-data">📅 ${formatarData(prox.data)}</div>
+        <div class="preview-turno">${TURNO_NOME[prox.turno]} · ${cl.horario}${prox.excecao ? ' · ⚠️ ' + prox.excecao : ''}</div>
+      </div>` : ''}
+
+      <button class="btn-salvar" onclick="salvarClinica('${c.id}',this)">
+        💾 Salvar alterações — ${cl.cidade.split(' PE')[0]}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ── AÇÕES ─────────────────────────────────────────────────────────
+function toggleAtivo(id, val) {
+  if (!estado[id]) estado[id] = {};
+  estado[id].ativo = val;
+  salvarEstado();
+  renderResumo();
+  renderCards();
+  toast(`${val ? '✅ Ativado' : '⏸️ Suspenso'} — ${getClinica(id).cidade.split(' PE')[0]}`);
+}
+
+function updateCampo(id, campo, val) {
+  if (!estado[id]) estado[id] = {};
+  estado[id][campo] = val;
+}
+
+function salvarClinica(id, btn) {
+  salvarEstado();
+  renderResumo();
+  btn.textContent = '✅ Salvo!';
+  btn.classList.add('ok');
+  setTimeout(() => {
+    btn.textContent = `💾 Salvar alterações — ${getClinica(id).cidade.split(' PE')[0]}`;
+    btn.classList.remove('ok');
+  }, 2000);
+  toast('Configuração salva com sucesso.');
+}
+
+function salvarExcecao() {
+  const clinicaId = document.getElementById('exc-clinica').value;
+  const data = document.getElementById('exc-data').value;
+  const turno = document.getElementById('exc-turno').value;
+  const obs = document.getElementById('exc-obs').value;
+  if (!clinicaId || !data) { toast('⚠️ Selecione a clínica e a data.'); return; }
+  excecoes = excecoes.filter(e => !(e.clinicaId === clinicaId && e.data === data));
+  excecoes.push({ clinicaId, data, turno, obs });
+  salvarEstado();
+  renderExcecoes();
+  renderResumo();
+  renderCards();
+  document.getElementById('exc-clinica').value = '';
+  document.getElementById('exc-data').value = '';
+  document.getElementById('exc-obs').value = '';
+  toast('Exceção registrada com sucesso.');
+}
+
+function removerExcecao(idx) {
+  excecoes.splice(idx, 1);
+  salvarEstado();
+  renderExcecoes();
+  renderResumo();
+  renderCards();
+  toast('Exceção removida.');
+}
+
+function renderExcecoes() {
+  const el = document.getElementById('excecoes-lista');
+  if (!excecoes.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Exceções registradas</div>` +
+    excecoes.map((e, i) => {
+      const cl = getClinica(e.clinicaId);
+      const d = new Date(e.data + 'T12:00:00').toLocaleDateString('pt-BR', {weekday:'short',day:'2-digit',month:'2-digit'});
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--soft);border-radius:8px;margin-bottom:6px;font-size:13px;">
+        <div>
+          <strong>${cl.cidade.split(' PE')[0]}</strong> · ${d} · ${TURNO_NOME[e.turno]}
+          ${e.obs ? `<span style="color:var(--muted)"> · ${e.obs}</span>` : ''}
+        </div>
+        <button onclick="removerExcecao(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 6px">✕</button>
+      </div>`;
+    }).join('');
+}
+
+// ── HORA ATUAL ────────────────────────────────────────────────────
+function atualizarHora() {
+  const agora = new Date();
+  document.getElementById('hora-atual').textContent =
+    agora.toLocaleString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+atualizarHora();
+setInterval(atualizarHora, 60000);
+renderResumo();
+renderCards();
+renderExcecoes();
+</script>
+
+<script>
+// ── VALORES POR CLÍNICA ───────────────────────────────────────────
+var VALORES_CONFIG = {
+  caruaru:  {label:'Caruaru Clinical Center',    itens:[{nome:'Consulta',valor:350},{nome:'Espirometria',valor:180},{nome:'Teste de caminhada',valor:150}]},
+  limoeiro: {label:'Clínica Magalhães Pedrosa',  itens:[{nome:'Consulta',valor:280},{nome:'Espirometria',valor:150}]},
+  jaboatao: {label:'Clinical+Saúde',             itens:[{nome:'Consulta',valor:220},{nome:'Espirometria',valor:130}]},
+  carpina:  {label:'Clínica Carpina',            itens:[{nome:'Consulta',valor:250},{nome:'Espirometria',valor:140}]},
+  palmares: {label:'Clínica Santa Joana',        itens:[{nome:'Consulta',valor:300},{nome:'Espirometria',valor:160}]},
+  gravata:  {label:'Gravatá Clinical Center',    itens:[{nome:'Consulta',valor:320},{nome:'Espirometria',valor:170}]},
+};
+
+var valoresEstado = JSON.parse(localStorage.getItem('pneumo_valores') || 'null') || {};
+
+function salvarValores() {
+  localStorage.setItem('pneumo_valores', JSON.stringify(valoresEstado));
+}
+
+function toggleValoresClinica(id) {
+  var body = document.getElementById('vbody-' + id);
+  var chev = document.getElementById('vchev-' + id);
+  body.classList.toggle('aberto');
+  chev.classList.toggle('aberto');
+}
+
+function renderValores() {
+  var container = document.getElementById('valores-container');
+  if (!container) return;
+
+  container.innerHTML = Object.keys(VALORES_CONFIG).map(function(id) {
+    var cfg = VALORES_CONFIG[id];
+    var est = valoresEstado[id] || {};
+    var exibir = est.exibir !== false; // padrão: exibir
+
+    var itensHTML = cfg.itens.map(function(item, i) {
+      var val = (est.itens && est.itens[i] !== undefined) ? est.itens[i] : item.valor;
+      return '<div class="valor-row">' +
+        '<span class="valor-servico">' + item.nome + '</span>' +
+        '<input class="valor-input" type="number" value="' + val + '" ' +
+          'onchange="atualizarValor('' + id + '',' + i + ',this.value)" ' +
+          'placeholder="R$">' +
+        '<span style="font-size:13px;color:var(--muted)">R$</span>' +
+      '</div>';
+    }).join('');
+
+    return '<div class="valores-card">' +
+      '<div class="valores-clinica-header" onclick="toggleValoresClinica('' + id + '')">' +
+        '<div>' +
+          '<div class="valores-clinica-nome">' + cfg.label + '</div>' +
+          '<div style="font-size:12px;color:var(--muted);margin-top:2px">' +
+            (exibir ? '👁 Valores visíveis no site' : '🙈 Valores ocultos no site') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:14px">' +
+          '<label class="toggle" onclick="event.stopPropagation()" title="Exibir valores no site">' +
+            '<input type="checkbox" ' + (exibir ? 'checked' : '') + ' ' +
+              'onchange="toggleExibir('' + id + '',this.checked)">' +
+            '<span class="toggle-slider"></span>' +
+          '</label>' +
+          '<span class="chevron" id="vchev-' + id + '">▼</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="valores-body" id="vbody-' + id + '">' +
+        itensHTML +
+        '<button class="btn-salvar" onclick="salvarValoresClinica('' + id + '',this)" style="margin-top:12px">' +
+          '💾 Salvar valores — ' + cfg.label.split(' ')[0] +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function atualizarValor(id, idx, val) {
+  if (!valoresEstado[id]) valoresEstado[id] = {};
+  if (!valoresEstado[id].itens) valoresEstado[id].itens = [];
+  valoresEstado[id].itens[idx] = parseFloat(val) || 0;
+}
+
+function toggleExibir(id, val) {
+  if (!valoresEstado[id]) valoresEstado[id] = {};
+  valoresEstado[id].exibir = val;
+  salvarValores();
+  renderValores();
+  toast(val ? '👁 Valores visíveis em ' + id : '🙈 Valores ocultos em ' + id);
+}
+
+function salvarValoresClinica(id, btn) {
+  salvarValores();
+  btn.textContent = '✅ Salvo!';
+  btn.classList.add('ok');
+  setTimeout(function(){ 
+    btn.textContent = '💾 Salvar valores — ' + VALORES_CONFIG[id].label.split(' ')[0];
+    btn.classList.remove('ok');
+  }, 2000);
+  toast('Valores salvos.');
+}
+
+// Inicializa valores
+renderValores();
+</script>
+
+</body>
+</html>
