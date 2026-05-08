@@ -576,7 +576,7 @@ body {
 
   <!-- 4. TABAGISMO -->
   <div class="section">
-    <div class="section-title">Tabagismo</div>
+    <div class="section-title">Exposições ambientais</div>
     <div class="card">
       <div class="field">
         <label>Já fumou ou fuma atualmente?</label>
@@ -831,5 +831,44 @@ document.getElementById('form').addEventListener('submit', async function (e) {
   }
 });
 </script>
+
+<script>
+// ── LÓGICA DE EXCLUSÃO MÚTUA — TABAGISMO ────────────────────────
+var EXCLUSIVOS = ['tab_nunca', 'tab_ex', 'tab_atual'];
+
+function handleTabagismo(el) {
+  if (!el.checked) { atualizarTabagismoValor(); return; }
+  // Se marcou um exclusivo, desmarca os outros exclusivos
+  if (EXCLUSIVOS.indexOf(el.id) !== -1) {
+    EXCLUSIVOS.forEach(function(id) {
+      if (id !== el.id) {
+        var o = document.getElementById(id);
+        if (o) o.checked = false;
+      }
+    });
+  }
+  atualizarTabagismoValor();
+}
+
+// Atualiza campo hidden com todas as seleções concatenadas
+function atualizarTabagismoValor() {
+  var campos = ['tab_nunca','tab_ex','tab_atual','tab_passivo','tab_lenha'];
+  var selecionados = campos
+    .map(function(id){ return document.getElementById(id); })
+    .filter(function(el){ return el && el.checked; })
+    .map(function(el){ return el.value; });
+  
+  var hidden = document.getElementById('tabagismo-valor');
+  if (hidden) hidden.value = selecionados.join(' + ');
+}
+
+// Garante que o campo hidden seja enviado corretamente
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.name && e.target.name.indexOf('tab_') === 0) {
+    atualizarTabagismoValor();
+  }
+});
+</script>
+
 </body>
 </html>
