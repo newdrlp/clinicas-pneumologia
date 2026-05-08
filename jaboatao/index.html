@@ -379,5 +379,26 @@ function iniciarRastreioLigacao() {
 }
 </script>
 
+
+<script>
+// Atualiza link da ficha com dados do paciente quando disponíveis
+function atualizarLinkFicha() {
+  var btn = document.getElementById('btn-ficha');
+  if (!btn) return;
+  var nome = document.getElementById('nome-input') ? document.getElementById('nome-input').value : '';
+  var wpp  = document.getElementById('wpp-input')  ? document.getElementById('wpp-input').value  : '';
+  var url  = 'https://newdrlp.github.io/pre-atendimento?clinica=jaboatao';
+  if (nome) url += '&nome=' + encodeURIComponent(nome);
+  if (wpp)  url += '&whatsapp=' + encodeURIComponent(wpp);
+  btn.href = url;
+}
+// Observa campos do formulário de agendamento
+document.addEventListener('input', function(e) {
+  if (e.target && (e.target.id === 'nome-input' || e.target.id === 'wpp-input')) {
+    atualizarLinkFicha();
+  }
+});
+</script>
+
 </body>
 </html>
