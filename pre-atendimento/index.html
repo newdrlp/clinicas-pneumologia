@@ -454,7 +454,7 @@ body {
     <span id="badge-txt">Carregando…</span>
   </div>
   <h1>Ficha de<br>Pré-Atendimento</h1>
-  <p class="header-sub">Estas informações chegam diretamente ao Dr. Lucas antes da sua consulta.</p>
+  <p class="header-sub" style="font-size:14px;color:rgba(255,255,255,.75)">Estas informações chegam diretamente ao Dr. Lucas antes da sua consulta.</p>
 </header>
 
 <!-- PROGRESSO -->
@@ -497,6 +497,12 @@ body {
         <label for="wa">WhatsApp (com DDD) <span class="req">*</span></label>
         <input type="tel" id="wa" name="whatsapp" autocomplete="tel" placeholder="(81) 99999-9999">
         <span class="err-msg" id="e-wa">Informe seu WhatsApp.</span>
+      </div>
+
+
+      <div class="field" id="email-fld">
+        <label for="email">E-mail <span style="font-size:11px;color:var(--texto-3)">(para envio de documentos após a consulta)</span></label>
+        <input type="email" id="email" name="email" autocomplete="email" placeholder="seu@email.com">
       </div>
 
       <!-- Clínica — sempre readonly -->
@@ -795,6 +801,8 @@ function coletar() {
     medicacoes:          document.getElementById('med').value.trim(),
     alergias:            document.getElementById('alg').value.trim(),
     autorizacao:         document.querySelector('input[name=autorizacao]:checked')?.value || '',
+    email:               document.getElementById('email').value.trim(),
+    tipo_consulta:       document.querySelector('input[name=tipo_consulta]:checked')?.value || '',
     fonte:               'formulario_web',
   };
 }
