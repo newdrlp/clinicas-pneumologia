@@ -442,6 +442,29 @@ body {
   .two     { grid-template-columns: 1fr; }
   .header h1 { font-size: 21px; }
 }
+
+.voz-wrap{position:relative;}
+.btn-voz{
+  display:none; /* mostrado via JS apenas se suportado */
+  align-items:center;gap:6px;
+  padding:8px 14px;border-radius:8px;
+  background:var(--verde-bg);border:1.5px solid var(--verde-border);
+  color:var(--verde);font-family:'Source Sans 3',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;
+  margin-top:6px;transition:all 0.2s;
+}
+.btn-voz:hover{background:var(--verde-border);}
+.btn-voz.gravando{
+  background:#fee2e2;border-color:#fca5a5;color:#dc2626;
+  animation:pulsar 1s ease-in-out infinite;
+}
+@keyframes pulsar{0%,100%{opacity:1}50%{opacity:0.6}}
+.voz-status{
+  font-size:11px;color:var(--texto-3);margin-top:4px;
+  min-height:16px;display:none;
+}
+.voz-status.visivel{display:block;}
+
 </style>
 </head>
 <body>
@@ -540,6 +563,13 @@ body {
         <p class="hint">Descreva o sintoma mais importante e há quanto tempo está presente.</p>
         <textarea id="qp" name="queixa_principal" rows="3" placeholder="Ex: Tosse seca há 3 semanas, pior à noite…"></textarea>
         <span class="err-msg" id="e-qp">Descreva o motivo da consulta.</span>
+
+          <div class="voz-wrap">
+            <button type="button" class="btn-voz" id="btn-voz-qp" onclick="toggleVoz('qp')">
+              🎙 Falar minha queixa
+            </button>
+            <div class="voz-status" id="status-voz-qp">Ouvindo... fale sua queixa principal</div>
+          </div>
       </div>
       <div class="field">
         <label for="qs">Tem outra queixa ou sintoma que gostaria de relatar?</label>
@@ -876,6 +906,86 @@ document.addEventListener('change', function(e) {
     atualizarTabagismoValor();
   }
 });
+</script>
+
+
+<script>
+// ── TRANSCRIÇÃO POR VOZ ──────────────────────────────────────────
+// Só ativa se o navegador suportar (não aparece em iPhone Safari)
+var reconhecimento = null;
+var vozAtiva = null;
+
+function iniciarVoz() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return; // sem suporte — botões ficam ocultos
+
+  // Mostra os botões de voz
+  var btns = document.querySelectorAll('.btn-voz');
+  btns.forEach(function(b){ b.style.display = 'inline-flex'; });
+
+  reconhecimento = new SR();
+  reconhecimento.lang = 'pt-BR';
+  reconhecimento.continuous = true;
+  reconhecimento.interimResults = true;
+
+  reconhecimento.onresult = function(e) {
+    var campo = document.getElementById(vozAtiva === 'qp' ? 'qp' : 'qs');
+    var texto = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      texto += e.results[i][0].transcript;
+    }
+    if (campo) campo.value = texto;
+  };
+
+  reconhecimento.onerror = function(e) {
+    pararVoz();
+    var status = document.getElementById('status-voz-' + vozAtiva);
+    if (status) {
+      status.textContent = 'Não foi possível captar. Tente novamente.';
+      status.classList.add('visivel');
+      setTimeout(function(){ status.classList.remove('visivel'); }, 3000);
+    }
+  };
+
+  reconhecimento.onend = function() {
+    if (vozAtiva) pararVoz();
+  };
+}
+
+function toggleVoz(campo) {
+  if (vozAtiva === campo) {
+    pararVoz();
+  } else {
+    if (vozAtiva) pararVoz();
+    iniciarGravacao(campo);
+  }
+}
+
+function iniciarGravacao(campo) {
+  if (!reconhecimento) return;
+  vozAtiva = campo;
+  var btn = document.getElementById('btn-voz-' + campo);
+  var status = document.getElementById('status-voz-' + campo);
+  if (btn) { btn.classList.add('gravando'); btn.textContent = '⏹ Parar gravação'; }
+  if (status) status.classList.add('visivel');
+  reconhecimento.start();
+}
+
+function pararVoz() {
+  if (!reconhecimento || !vozAtiva) return;
+  reconhecimento.stop();
+  var btn = document.getElementById('btn-voz-' + vozAtiva);
+  var status = document.getElementById('status-voz-' + vozAtiva);
+  if (btn) {
+    btn.classList.remove('gravando');
+    btn.innerHTML = vozAtiva === 'qp' ? '🎙 Falar minha queixa' : '🎙 Falar queixa adicional';
+  }
+  if (status) status.classList.remove('visivel');
+  vozAtiva = null;
+}
+
+// Inicializa ao carregar
+document.addEventListener('DOMContentLoaded', iniciarVoz);
 </script>
 
 </body>
