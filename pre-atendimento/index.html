@@ -1040,5 +1040,20 @@ document.addEventListener('input', function(e) {
 
 document.addEventListener('DOMContentLoaded', iniciarVoz);</script>
 
+
+<script>
+// Máscara automática para data de nascimento
+document.addEventListener('DOMContentLoaded', function() {
+  var nasc = document.getElementById('nasc');
+  if (!nasc) return;
+  nasc.addEventListener('input', function(e) {
+    var v = e.target.value.replace(/\D/g, '');
+    if (v.length >= 3 && v.length <= 4) v = v.slice(0,2) + '/' + v.slice(2);
+    else if (v.length > 4) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4,8);
+    e.target.value = v;
+  });
+});
+</script>
+
 </body>
 </html>
