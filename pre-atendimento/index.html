@@ -542,7 +542,7 @@ body {
       <div class="two">
         <div class="field">
           <label for="nasc">Data de nascimento <span class="req">*</span></label>
-          <input type="text" id="nasc" name="data_nascimento" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" autocomplete="off" pattern="[0-9/]*">
+          <input type="text" id="nasc" name="data_nascimento" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" autocomplete="off">
           <span class="err-msg" id="e-nasc">Informe sua data de nascimento.</span>
         </div>
         <div class="field">
@@ -1053,6 +1053,52 @@ document.addEventListener('DOMContentLoaded', function() {
     e.target.value = v;
   });
 });
+</script>
+
+
+<script>
+var MEDICAMENTOS_ESPIRO = [
+  {nome: 'Salbutamol (Aerolin) / Fenoterol (Berotec)', tempo: '4 horas', tipo: 'SBDA'},
+  {nome: 'Formoterol / Salmeterol (LABA)', tempo: '12 horas', tipo: 'LABA'},
+  {nome: 'Tiotrópio (Spiriva) / Umeclidínio (LAMA)', tempo: '24 horas', tipo: 'LAMA'},
+  {nome: 'Ipratrópio (Atrovent)', tempo: '6 horas', tipo: 'SAMA'},
+  {nome: 'Associações (Symbicort, Fostair, Seretide, Trimbow)', tempo: '12 horas', tipo: 'Combinado'},
+  {nome: 'Teofilina / Aminofilina', tempo: '12 horas', tipo: 'Xantina'},
+  {nome: 'Cafeína (café, chá preto, energéticos)', tempo: '4 horas', tipo: 'Estimulante'},
+  {nome: 'Cigarro', tempo: '4 horas', tipo: 'Tabaco'},
+  {nome: 'Exercício físico intenso', tempo: '30 minutos', tipo: 'Atividade'},
+  {nome: 'Refeição pesada', tempo: '2 horas', tipo: 'Alimentação'},
+];
+
+function togglePreparo(el) {
+  var div = document.getElementById('preparo-espiro');
+  if (!div) return;
+  if (el.checked && el.value === 'Espirometria') {
+    div.style.display = 'block';
+    renderMedicamentos();
+  } else {
+    div.style.display = 'none';
+  }
+}
+
+// Esconde preparo se outro tipo for selecionado
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.name === 'tipo_consulta' && e.target.value !== 'Espirometria') {
+    var div = document.getElementById('preparo-espiro');
+    if (div) div.style.display = 'none';
+  }
+});
+
+function renderMedicamentos() {
+  var lista = document.getElementById('lista-medicamentos');
+  if (!lista) return;
+  lista.innerHTML = MEDICAMENTOS_ESPIRO.map(function(m) {
+    return '<div style="background:white;border-radius:8px;padding:10px 12px;border:1px solid #c3dfd0">' +
+      '<div style="font-size:13px;font-weight:600;color:#1a2620">' + m.nome + '</div>' +
+      '<div style="font-size:12px;color:#1f6e4a;margin-top:2px">⏱ Suspender <strong>' + m.tempo + '</strong> antes do exame</div>' +
+      '</div>';
+  }).join('');
+}
 </script>
 
 </body>
