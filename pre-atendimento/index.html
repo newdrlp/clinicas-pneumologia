@@ -542,7 +542,7 @@ body {
       <div class="two">
         <div class="field">
           <label for="nasc">Data de nascimento <span class="req">*</span></label>
-          <input type="date" id="nasc" name="data_nascimento">
+          <input type="text" id="nasc" name="data_nascimento" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric">
           <span class="err-msg" id="e-nasc">Informe sua data de nascimento.</span>
         </div>
         <div class="field">
@@ -561,7 +561,7 @@ body {
       <div class="field">
         <label for="qp">Qual é sua queixa principal? <span class="req">*</span></label>
         <p class="hint">Descreva o sintoma mais importante e há quanto tempo está presente.</p>
-        <textarea id="qp" name="queixa_principal" rows="3" placeholder="Ex: Tosse seca há 3 semanas, pior à noite…"></textarea>
+        <textarea id="qp" name="queixa_principal" rows="5" style="resize:vertical" placeholder="Ex: Tosse seca há 3 semanas, pior à noite…"></textarea>
         <span class="err-msg" id="e-qp">Descreva o motivo da consulta.</span>
 
           <div class="voz-wrap">
@@ -573,7 +573,7 @@ body {
       </div>
       <div class="field">
         <label for="qs">Tem outra queixa ou sintoma que gostaria de relatar?</label>
-        <textarea id="qs" name="queixa_secundaria" rows="2" placeholder="Opcional…"></textarea>
+        <textarea id="qs" name="queixa_secundaria" rows="3" style="resize:vertical" placeholder="Opcional…"></textarea>
       </div>
     </div>
   </div>
@@ -911,45 +911,77 @@ document.addEventListener('change', function(e) {
 
 <script>
 // ── TRANSCRIÇÃO POR VOZ ──────────────────────────────────────────
-// Só ativa se o navegador suportar (não aparece em iPhone Safari)
-var reconhecimento = null;
 var vozAtiva = null;
+var textoAcumulado = {};
+var reconhecimento = null;
 
 function iniciarVoz() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return; // sem suporte — botões ficam ocultos
+  if (!SR) return;
 
-  // Mostra os botões de voz
-  var btns = document.querySelectorAll('.btn-voz');
-  btns.forEach(function(b){ b.style.display = 'inline-flex'; });
+  document.querySelectorAll('.btn-voz').forEach(function(b){
+    b.style.display = 'inline-flex';
+  });
+}
 
-  reconhecimento = new SR();
-  reconhecimento.lang = 'pt-BR';
-  reconhecimento.continuous = true;
-  reconhecimento.interimResults = true;
+function criarReconhecimento(campo) {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
 
-  reconhecimento.onresult = function(e) {
-    var campo = document.getElementById(vozAtiva === 'qp' ? 'qp' : 'qs');
-    var texto = '';
-    for (var i = e.resultIndex; i < e.results.length; i++) {
-      texto += e.results[i][0].transcript;
+  var r = new SR();
+  r.lang = 'pt-BR';
+  r.continuous = false; // false evita reinício automático e duplicação
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+
+  r.onresult = function(e) {
+    var el = document.getElementById(campo === 'qp' ? 'qp' : 'qs');
+    if (!el) return;
+
+    var parcial = '';
+    var novoFinal = '';
+
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        novoFinal += e.results[i][0].transcript;
+      } else {
+        parcial = e.results[i][0].transcript;
+      }
     }
-    if (campo) campo.value = texto;
+
+    if (novoFinal) {
+      textoAcumulado[campo] = (textoAcumulado[campo] || '') + novoFinal + ' ';
+    }
+
+    el.value = (textoAcumulado[campo] || '') + parcial;
+    el.scrollTop = el.scrollHeight;
   };
 
-  reconhecimento.onerror = function(e) {
-    pararVoz();
-    var status = document.getElementById('status-voz-' + vozAtiva);
-    if (status) {
-      status.textContent = 'Não foi possível captar. Tente novamente.';
-      status.classList.add('visivel');
-      setTimeout(function(){ status.classList.remove('visivel'); }, 3000);
+  r.onend = function() {
+    // Ao terminar uma sessão, reinicia se ainda ativo
+    if (vozAtiva === campo) {
+      try {
+        reconhecimento = criarReconhecimento(campo);
+        if (reconhecimento) reconhecimento.start();
+      } catch(e) {}
     }
   };
 
-  reconhecimento.onend = function() {
-    if (vozAtiva) pararVoz();
+  r.onerror = function(ev) {
+    if (ev.error === 'no-speech') {
+      // Silêncio — reinicia normalmente
+      if (vozAtiva === campo) {
+        try {
+          reconhecimento = criarReconhecimento(campo);
+          if (reconhecimento) reconhecimento.start();
+        } catch(e) {}
+      }
+    } else {
+      pararVoz();
+    }
   };
+
+  return r;
 }
 
 function toggleVoz(campo) {
@@ -962,31 +994,51 @@ function toggleVoz(campo) {
 }
 
 function iniciarGravacao(campo) {
-  if (!reconhecimento) return;
   vozAtiva = campo;
+
+  // Preserva texto já digitado
+  var el = document.getElementById(campo === 'qp' ? 'qp' : 'qs');
+  if (el && el.value && !textoAcumulado[campo]) {
+    textoAcumulado[campo] = el.value.trim() + ' ';
+  }
+
   var btn = document.getElementById('btn-voz-' + campo);
   var status = document.getElementById('status-voz-' + campo);
   if (btn) { btn.classList.add('gravando'); btn.textContent = '⏹ Parar gravação'; }
   if (status) status.classList.add('visivel');
-  reconhecimento.start();
+
+  reconhecimento = criarReconhecimento(campo);
+  if (reconhecimento) {
+    try { reconhecimento.start(); } catch(e) {}
+  }
 }
 
 function pararVoz() {
-  if (!reconhecimento || !vozAtiva) return;
-  reconhecimento.stop();
-  var btn = document.getElementById('btn-voz-' + vozAtiva);
-  var status = document.getElementById('status-voz-' + vozAtiva);
+  if (!vozAtiva) return;
+  var campo = vozAtiva;
+  vozAtiva = null;
+
+  if (reconhecimento) {
+    try { reconhecimento.stop(); } catch(e) {}
+    reconhecimento = null;
+  }
+
+  var btn = document.getElementById('btn-voz-' + campo);
+  var status = document.getElementById('status-voz-' + campo);
   if (btn) {
     btn.classList.remove('gravando');
-    btn.innerHTML = vozAtiva === 'qp' ? '🎙 Falar minha queixa' : '🎙 Falar queixa adicional';
+    btn.innerHTML = campo === 'qp' ? '🎙 Falar minha queixa' : '🎙 Falar queixa adicional';
   }
   if (status) status.classList.remove('visivel');
-  vozAtiva = null;
 }
 
-// Inicializa ao carregar
-document.addEventListener('DOMContentLoaded', iniciarVoz);
-</script>
+document.addEventListener('input', function(e) {
+  if (e.target && (e.target.id === 'qp' || e.target.id === 'qs') && !vozAtiva) {
+    textoAcumulado[e.target.id] = e.target.value;
+  }
+});
+
+document.addEventListener('DOMContentLoaded', iniciarVoz);</script>
 
 </body>
 </html>
