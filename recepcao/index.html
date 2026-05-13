@@ -424,11 +424,15 @@
 </div><!-- /tela-form -->
 
 <!-- ══ TELA 3: CONFIRMAÇÃO ══ -->
-<div id="tela-confirmacao" class="secao">
+<div id="tela-confirmacao" class="secao hidden">
   <div class="icone-ok">✅</div>
   <h2>Entrada registrada!</h2>
-  <p id="conf-nome" style="color:var(--sub); margin-bottom:16px;"></p>
-  <a id="conf-doc" href="#" target="_blank">Abrir prontuário do paciente →</a>
+  <p id="conf-nome" style="color:var(--sub); margin-bottom:8px; font-size:1.05rem;"></p>
+  <p id="conf-clinica" style="color:var(--sub); margin-bottom:16px; font-size:.9rem;"></p>
+  <a id="conf-doc" href="#" target="_blank"
+     style="display:none; color:var(--azul-m); font-size:.9rem;">
+    📄 Abrir prontuário do paciente →
+  </a>
   <br><br>
   <button class="btn btn-primario" onclick="novoAtendimento()">+ Próximo paciente</button>
 </div>
@@ -617,15 +621,18 @@ function enviarRecepcao() {
     spinner('sp-enviar', false);
     btn('btn-enviar', false);
     if (res.ok) {
-      document.getElementById('conf-nome').textContent = nome + ' · ' + dn;
+      document.getElementById('conf-nome').textContent = nome + ' · DN ' + dn;
+      document.getElementById('conf-clinica').textContent = clinica.split(' —')[0];
       if (res.doc_url) {
-        document.getElementById('conf-doc').href = res.doc_url;
-        document.getElementById('conf-doc').style.display = 'inline';
+        var linkDoc = document.getElementById('conf-doc');
+        linkDoc.href = res.doc_url;
+        linkDoc.style.display = 'inline';
       } else {
         document.getElementById('conf-doc').style.display = 'none';
       }
       mostrar('tela-form', false);
       mostrar('tela-confirmacao', true);
+      window.scrollTo(0, 0);
     } else {
       alertar('alerta-envio', 'erro', res.erro || 'Erro ao salvar. Tente novamente.');
     }
