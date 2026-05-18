@@ -134,6 +134,14 @@
     color: var(--sub);
     cursor: default;
   }
+  .hint {
+    display: none;
+    margin-top: 5px;
+    font-size: .72rem;
+    line-height: 1.35;
+    color: var(--sub);
+  }
+  .hint.visivel { display: block; }
   textarea { resize: vertical; min-height: 70px; }
 
   .linha-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -331,15 +339,30 @@
         <label>CPF</label>
         <input type="text" id="f-cpf" placeholder="000.000.000-00"
                maxlength="14" oninput="mascaraCPF(this)">
+        <small class="hint" id="hint-cpf"></small>
       </div>
       <div class="campo">
         <label>RG</label>
         <input type="text" id="f-rg" placeholder="0000000">
+        <small class="hint" id="hint-rg"></small>
+      </div>
+    </div>
+    <div class="linha-dupla">
+      <div class="campo">
+        <label>Telefone/WhatsApp</label>
+        <input type="tel" id="f-telefone" placeholder="(81) 99999-9999">
+        <small class="hint" id="hint-telefone"></small>
+      </div>
+      <div class="campo">
+        <label>E-mail</label>
+        <input type="email" id="f-email" placeholder="email@exemplo.com">
+        <small class="hint" id="hint-email"></small>
       </div>
     </div>
     <div class="campo">
       <label>Endereço</label>
       <input type="text" id="f-endereco" placeholder="Rua, número, bairro">
+      <small class="hint" id="hint-endereco"></small>
     </div>
     <div class="campo">
       <label>Cidade</label>
@@ -523,9 +546,11 @@ function buscarPaciente() {
       estado.linhaPre = res.linha_pre || null;
       estado.dadosPre = res.dados;
       preencherDados(res.dados);
-      var msg = res.historico
-        ? '📁 Paciente já atendido anteriormente. Dados de histórico carregados.'
-        : '✅ Ficha de pré-atendimento encontrada e carregada.';
+      var msg = res.origem === 'indice'
+        ? '📁 Paciente localizado no índice. Confira as pistas mascaradas com o paciente.'
+        : (res.historico
+          ? '📁 Paciente já atendido anteriormente. Dados de histórico carregados para conferência.'
+          : '✅ Ficha de pré-atendimento encontrada e carregada.');
       alertar('alerta-busca', 'ok', msg);
       document.getElementById('badge-pre').textContent =
         res.historico ? '📁 Paciente retorno' : '✅ Pré-atendimento vinculado';
@@ -545,12 +570,21 @@ function buscarPaciente() {
 }
 
 function preencherDados(d) {
-  // Campos que a recepção pode ver mas não devem ser sobrescritos se já preenchidos
+  limparPistas();
+  // Campos completos podem vir do pré-atendimento recente. Dados históricos entram como pista mascarada.
   if (d.cidade && !v('f-cidade'))   set('f-cidade',   d.cidade);
-  if (d.whatsapp) {} // WhatsApp não está no formulário de recepção
   if (d.cpf && !v('f-cpf'))         set('f-cpf',       d.cpf || '');
   if (d.rg && !v('f-rg'))           set('f-rg',         d.rg || '');
   if (d.endereco && !v('f-endereco')) set('f-endereco', d.endereco || '');
+  if ((d.telefone || d.whatsapp) && !v('f-telefone')) set('f-telefone', d.telefone || d.whatsapp || '');
+  if (d.email && !v('f-email'))     set('f-email',     d.email || '');
+
+  pista('hint-cpf', d.cpf_mascara ? 'Cadastrado: ' + d.cpf_mascara + ' · confirme e digite o CPF completo se necessário.' : '');
+  pista('hint-rg', d.rg_mascara ? 'Cadastrado: ' + d.rg_mascara + ' · confirme antes de usar.' : '');
+  pista('hint-telefone', d.telefone_mascara ? 'Cadastrado: ' + d.telefone_mascara + ' · confirme e digite o telefone completo se necessário.' : '');
+  pista('hint-email', d.email_mascara ? 'Cadastrado: ' + d.email_mascara + ' · confirme e digite o e-mail completo se necessário.' : '');
+  pista('hint-endereco', d.endereco_mascara ? 'Cadastrado: ' + d.endereco_mascara + ' · confirme e atualize se mudou.' : '');
+
   // Dados clínicos — só leitura
   if (d.qp) {
     set('f-qp', d.qp + (d.qs ? '\n' + d.qs : ''));
@@ -562,6 +596,7 @@ function preencherDados(d) {
 }
 
 function resetBusca() {
+  limparPistas();
   estado.linhaPre = null;
   estado.dadosPre = null;
   document.getElementById('badge-pre').style.display = 'none';
@@ -591,6 +626,8 @@ function enviarRecepcao() {
     rg:            v('f-rg'),
     endereco:      v('f-endereco'),
     cidade:        v('f-cidade'),
+    telefone:      v('f-telefone'),
+    email:         v('f-email'),
     pagamento:     pagamento,
     valor:         v('f-valor'),
     recibo:        v('f-recibo'),
@@ -605,7 +642,7 @@ function enviarRecepcao() {
     tabagismo:     estado.dadosPre ? estado.dadosPre.tabagismo    : '',
     medicacoes:    estado.dadosPre ? estado.dadosPre.medicacoes   : '',
     alergias:      estado.dadosPre ? estado.dadosPre.alergias     : '',
-    whatsapp:      estado.dadosPre ? estado.dadosPre.whatsapp     : '',
+    whatsapp:      v('f-telefone') || (estado.dadosPre ? estado.dadosPre.whatsapp : ''),
   };
 
   spinner('sp-enviar', true);
@@ -646,7 +683,7 @@ function enviarRecepcao() {
 
 // ══ NOVO ATENDIMENTO ══
 function novoAtendimento() {
-  ['f-nome','f-dn','f-cpf','f-rg','f-endereco','f-cidade',
+  ['f-nome','f-dn','f-cpf','f-rg','f-telefone','f-email','f-endereco','f-cidade',
    'f-valor','f-cpf-pag','f-obs','f-qp','f-obs-clin'].forEach(id => set(id, ''));
   ['f-clinica','f-pagamento','f-recibo'].forEach(id => {
     var el = document.getElementById(id);
@@ -665,6 +702,7 @@ function novoAtendimento() {
   estado.dadosPre = null;
   document.getElementById('badge-pre').style.display = 'none';
   document.getElementById('secao-clinica').style.display = 'none';
+  limparPistas();
   ['alerta-busca','alerta-envio'].forEach(id => alertar(id, '', ''));
   mostrar('tela-confirmacao', false);
   mostrar('tela-form', true);
@@ -699,6 +737,16 @@ function alertar(id, tipo, msg) {
   if (!el) return;
   el.className = 'alerta' + (tipo ? ' alerta-' + tipo + ' visivel' : '');
   el.textContent = msg;
+}
+function pista(id, msg) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg || '';
+  if (msg) el.classList.add('visivel');
+  else el.classList.remove('visivel');
+}
+function limparPistas() {
+  ['hint-cpf','hint-rg','hint-telefone','hint-email','hint-endereco'].forEach(id => pista(id, ''));
 }
 function validarDN(s) {
   return /^\d{2}\/\d{2}\/(\d{4}|\d{2})$/.test(s);
