@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recepção — Pneumologia PE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  /* ── VARIÁVEIS ── */
+  :root {
+    --azul:     #1a3a5c;
+    --azul-m:   #2c5f8a;
+    --verde:    #1f6e4a;
+    --verde-m:  #2a8f61;
+    --cinza:    #f4f6f8;
+    --borda:    #d0dae6;
+    --texto:    #1a2433;
+    --sub:      #5a6a7e;
+    --erro:     #c0392b;
+    --ok:       #1f6e4a;
+    --radius:   10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eef1f5;
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  /* ── TOPO ── */
+  header {
+    background: var(--azul);
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: .03em;
+  }
+  header span {
+    font-size: .78rem;
+    opacity: .7;
+  }
+  #badge-usuario {
+    font-size: .8rem;
+    background: rgba(255,255,255,.15);
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: none;
+  }
+
+  /* ── CONTAINER ── */
+  main {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* ── SEÇÕES ── */
+  .secao {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--borda);
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    animation: fadein .3s ease;
+  }
+  @keyframes fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  .secao-titulo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    color: var(--azul);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--cinza);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .secao-titulo .icone {
+    width: 28px; height: 28px;
+    background: var(--azul);
+    color: #fff;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem;
+  }
+
+  /* ── CAMPOS ── */
+  .campo { margin-bottom: 14px; }
+  label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 5px;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid var(--borda);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .95rem;
+    color: var(--texto);
+    background: #fff;
+    transition: border .15s;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--azul-m);
+    box-shadow: 0 0 0 3px rgba(44,95,138,.12);
+  }
+  input[readonly] {
+    background: var(--cinza);
+    color: var(--sub);
+    cursor: default;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .linha-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── BOTÕES ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primario { background: var(--azul); color: #fff; }
+  .btn-primario:hover { background: var(--azul-m); }
+  .btn-verde { background: var(--verde); color: #fff; }
+  .btn-verde:hover { background: var(--verde-m); }
+  .btn-secundario { background: var(--cinza); color: var(--azul); border: 1.5px solid var(--borda); }
+  .btn-secundario:hover { background: #e4e9ef; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── ALERTA DE BUSCA ── */
+  .alerta {
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: .9rem;
+    margin-bottom: 14px;
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .alerta-ok { background: #e8f5ee; border: 1px solid #a8d9b8; color: var(--ok); }
+  .alerta-aviso { background: #fff8e1; border: 1px solid #ffe082; color: #7a5c00; }
+  .alerta-erro { background: #fdecea; border: 1px solid #f5c6c2; color: var(--erro); }
+  .alerta.visivel { display: flex; }
+
+  /* ── BADGE PACIENTE ENCONTRADO ── */
+  #badge-pre {
+    font-size: .78rem;
+    background: #e8f5ee;
+    color: var(--ok);
+    border: 1px solid #a8d9b8;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* ── TELA DE LOGIN ── */
+  #tela-login {
+    max-width: 380px;
+    margin: 60px auto 0;
+  }
+  #tela-login .secao-titulo { justify-content: center; }
+  .logo-login {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .logo-login p {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--azul);
+  }
+  .logo-login small {
+    font-size: .8rem;
+    color: var(--sub);
+  }
+
+  /* ── SPINNER ── */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2.5px solid rgba(255,255,255,.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── CONFIRMAÇÃO FINAL ── */
+  #tela-confirmacao { text-align: center; }
+  #tela-confirmacao .icone-ok {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+  #tela-confirmacao h2 {
+    font-family: 'DM Serif Display', serif;
+    color: var(--verde);
+    margin-bottom: 8px;
+  }
+  #tela-confirmacao a {
+    color: var(--azul-m);
+    font-size: .85rem;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ══ CABEÇALHO ══ -->
+<header>
+  <h1>Pneumologia PE · Recepção</h1>
+  <span id="badge-usuario"></span>
+</header>
+
+<main>
+
+<!-- ══ TELA 1: LOGIN ══ -->
+<div id="tela-login">
+  <div class="logo-login">
+    <p>🫁 Recepção</p>
+    <small>Dr. Lucas Pereira de Souza · CRM-PE 9777</small>
+  </div>
+  <div class="secao">
+    <div class="secao-titulo">
+      <span class="icone">🔐</span> Acesso da Recepcionista
+    </div>
+    <div class="campo">
+      <label>Usuário</label>
+      <input type="text" id="inp-usuario" placeholder="seu.usuario" autocomplete="username">
+    </div>
+    <div class="campo">
+      <label>Senha</label>
+      <input type="password" id="inp-senha" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="alerta-login" class="alerta alerta-erro"></div>
+    <button class="btn btn-primario" id="btn-login" onclick="fazerLogin()">
+      <span class="spinner" id="sp-login"></span>
+      Entrar
+    </button>
+  </div>
+</div>
+
+<!-- ══ TELA 2: FORMULÁRIO ══ -->
+<div id="tela-form" class="hidden">
+
+  <!-- Busca paciente -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <span class="icone">🔍</span> Identificação do Paciente
+    </div>
+    <div class="campo">
+      <label>Nome completo *</label>
+      <input type="text" id="f-nome" placeholder="Nome completo do paciente"
+             oninput="resetBusca()">
+    </div>
+    <div class="campo">
+      <label>Data de nascimento *</label>
+      <input type="text" id="f-dn" placeholder="DD/MM/AAAA"
+             maxlength="10" oninput="mascaraDN(this); resetBusca()">
+    </div>
+    <button class="btn btn-secundario" id="btn-buscar" onclick="buscarPaciente()">
+      <span class="spinner" id="sp-buscar"></span>
+      🔍 Verificar ficha existente
+    </button>
+    <div id="badge-pre"></div>
+    <div id="alerta-busca" class="alerta"></div>
+  </div>
+
+  <!-- Clínica -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <span class="icone">🏥</span> Clínica do Atendimento
+    </div>
+    <div class="campo">
+      <label>Clínica *</label>
+      <select id="f-clinica">
+        <option value="">Selecione…</option>
+        <option value="Caruaru Clinical Center — Caruaru PE">Caruaru Clinical Center</option>
+        <option value="Clínica Santa Joana — Palmares PE">Clínica Santa Joana — Palmares</option>
+        <option value="Gravatá Clinical Center — Gravatá PE">Gravatá Clinical Center</option>
+        <option value="Clinical+Saúde — Jaboatão dos Guararapes PE">Clinical+Saúde — Jaboatão</option>
+        <option value="Clínica Magalhães Pedrosa — Limoeiro PE">Clínica Magalhães Pedrosa — Limoeiro</option>
+        <option value="Clínica Carpina — Carpina PE">Clínica Carpina</option>
+        <option value="Consultório Médico Vida e Saúde — Cajueiro Seco PE">Vida e Saúde — Cajueiro Seco</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Identificação complementar -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <span class="icone">🪪</span> Dados de Identificação
+    </div>
+    <div class="linha-dupla">
+      <div class="campo">
+        <label>CPF</label>
+        <input type="text" id="f-cpf" placeholder="000.000.000-00"
+               maxlength="14" oninput="mascaraCPF(this)">
+      </div>
+      <div class="campo">
+        <label>RG</label>
+        <input type="text" id="f-rg" placeholder="0000000">
+      </div>
+    </div>
+    <div class="campo">
+      <label>Endereço</label>
+      <input type="text" id="f-endereco" placeholder="Rua, número, bairro">
+    </div>
+    <div class="campo">
+      <label>Cidade</label>
+      <input type="text" id="f-cidade" placeholder="Cidade">
+    </div>
+  </div>
+
+  <!-- Dados clínicos (só leitura se veio do pré-atendimento) -->
+  <div class="secao" id="secao-clinica" style="display:none">
+    <div class="secao-titulo">
+      <span class="icone">🫁</span> Queixa (pré-atendimento)
+    </div>
+    <div class="campo">
+      <label>Queixa principal</label>
+      <textarea id="f-qp" readonly rows="3"></textarea>
+    </div>
+    <div class="campo">
+      <label>Observações clínicas</label>
+      <textarea id="f-obs-clin" readonly rows="2"></textarea>
+    </div>
+  </div>
+
+  <!-- Financeiro -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <span class="icone">💰</span> Financeiro
+    </div>
+    <div class="linha-dupla">
+      <div class="campo">
+        <label>Forma de pagamento *</label>
+        <select id="f-pagamento">
+          <option value="">Selecione…</option>
+          <option>Pix</option>
+          <option>Dinheiro</option>
+          <option>Cartão de débito</option>
+          <option>Cartão de crédito</option>
+          <option>Convênio</option>
+          <option>Cortesia</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Valor (R$)</label>
+        <input type="text" id="f-valor" placeholder="350,00">
+      </div>
+    </div>
+    <div class="linha-dupla">
+      <div class="campo">
+        <label>Recibo emitido?</label>
+        <select id="f-recibo">
+          <option value="">—</option>
+          <option>Sim</option>
+          <option>Não</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>CPF do pagador</label>
+        <input type="text" id="f-cpf-pag" placeholder="Se diferente" maxlength="14"
+               oninput="mascaraCPF(this)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Observações -->
+  <div class="secao">
+    <div class="secao-titulo">
+      <span class="icone">📝</span> Observações da Recepção
+    </div>
+    <div class="campo">
+      <textarea id="f-obs" placeholder="Anotações adicionais (opcional)" rows="3"></textarea>
+    </div>
+  </div>
+
+  <!-- Enviar -->
+  <div id="alerta-envio" class="alerta"></div>
+  <button class="btn btn-verde" id="btn-enviar" onclick="enviarRecepcao()">
+    <span class="spinner" id="sp-enviar"></span>
+    ✅ Registrar entrada do paciente
+  </button>
+  <br><br>
+  <button class="btn btn-secundario" onclick="novoAtendimento()">+ Novo paciente</button>
+
+</div><!-- /tela-form -->
+
+<!-- ══ TELA 3: CONFIRMAÇÃO ══ -->
+<div id="tela-confirmacao" class="secao hidden">
+  <div class="icone-ok">✅</div>
+  <h2>Entrada registrada!</h2>
+  <p id="conf-nome" style="color:var(--sub); margin-bottom:8px; font-size:1.05rem;"></p>
+  <p id="conf-clinica" style="color:var(--sub); margin-bottom:16px; font-size:.9rem;"></p>
+  <a id="conf-doc" href="#" target="_blank"
+     style="display:none; color:var(--azul-m); font-size:.9rem;">
+    📄 Abrir prontuário do paciente →
+  </a>
+  <br><br>
+  <button class="btn btn-primario" onclick="novoAtendimento()">+ Próximo paciente</button>
+</div>
+
+</main>
+
+<script>
+// ══ CONFIGURAÇÃO ══
+// Cole aqui a URL do Recepcao.gs após implantar como App da Web
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
+
+// ══ ESTADO ══
+var estado = {
+  usuario:       '',
+  nomeExibicao:  '',
+  clinicaPadrao: '',
+  linhaPre:      null,
+  dadosPre:      null,
+};
+
+// ══ LOGIN ══
+function fazerLogin() {
+  var usuario = v('inp-usuario').trim();
+  var senha   = v('inp-senha').trim();
+  if (!usuario || !senha) { alertar('alerta-login', 'erro', 'Preencha usuário e senha.'); return; }
+
+  spinner('sp-login', true);
+  btn('btn-login', true);
+
+  fetch(ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({ acao: 'login', usuario: usuario, senha: senha })
+  })
+  .then(r => r.json())
+  .then(res => {
+    spinner('sp-login', false);
+    btn('btn-login', false);
+    if (res.ok) {
+      estado.usuario       = usuario;
+      estado.nomeExibicao  = res.nome_exibicao;
+      estado.clinicaPadrao = res.clinica_padrao;
+      document.getElementById('badge-usuario').textContent = '👤 ' + res.nome_exibicao;
+      document.getElementById('badge-usuario').style.display = 'block';
+      mostrar('tela-login', false);
+      mostrar('tela-form', true);
+      // Pré-seleciona clínica padrão da recepcionista
+      if (res.clinica_padrao) {
+        var sel = document.getElementById('f-clinica');
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value.indexOf(res.clinica_padrao) >= 0) {
+            sel.selectedIndex = i; break;
+          }
+        }
+      }
+    } else {
+      alertar('alerta-login', 'erro', res.erro || 'Credenciais inválidas.');
+    }
+  })
+  .catch(() => {
+    spinner('sp-login', false);
+    btn('btn-login', false);
+    alertar('alerta-login', 'erro', 'Erro de conexão. Tente novamente.');
+  });
+}
+
+// ══ BUSCA PACIENTE ══
+function buscarPaciente() {
+  var nome = v('f-nome').trim();
+  var dn   = v('f-dn').trim();
+  if (!nome || !dn) { alertar('alerta-busca', 'erro', 'Informe nome e data de nascimento.'); return; }
+  if (!validarDN(dn)) { alertar('alerta-busca', 'erro', 'Data no formato DD/MM/AAAA.'); return; }
+
+  spinner('sp-buscar', true);
+  btn('btn-buscar', true);
+  alertar('alerta-busca', '', '');
+
+  fetch(ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({ acao: 'buscar', nome: nome, data_nasc: dn })
+  })
+  .then(r => r.json())
+  .then(res => {
+    spinner('sp-buscar', false);
+    btn('btn-buscar', false);
+    if (!res.ok) { alertar('alerta-busca', 'erro', res.erro || 'Erro na busca.'); return; }
+
+    if (res.encontrado) {
+      estado.linhaPre = res.linha_pre || null;
+      estado.dadosPre = res.dados;
+      preencherDados(res.dados);
+      var msg = res.historico
+        ? '📁 Paciente já atendido anteriormente. Dados de histórico carregados.'
+        : '✅ Ficha de pré-atendimento encontrada e carregada.';
+      alertar('alerta-busca', 'ok', msg);
+      document.getElementById('badge-pre').textContent =
+        res.historico ? '📁 Paciente retorno' : '✅ Pré-atendimento vinculado';
+      document.getElementById('badge-pre').style.display = 'block';
+    } else {
+      estado.linhaPre = null;
+      estado.dadosPre = null;
+      alertar('alerta-busca', 'aviso', '🆕 Paciente não encontrado no sistema. Será cadastrado como novo.');
+      document.getElementById('badge-pre').style.display = 'none';
+    }
+  })
+  .catch(() => {
+    spinner('sp-buscar', false);
+    btn('btn-buscar', false);
+    alertar('alerta-busca', 'erro', 'Erro de conexão.');
+  });
+}
+
+function preencherDados(d) {
+  // Campos que a recepção pode ver mas não devem ser sobrescritos se já preenchidos
+  if (d.cidade && !v('f-cidade'))   set('f-cidade',   d.cidade);
+  if (d.whatsapp) {} // WhatsApp não está no formulário de recepção
+  if (d.cpf && !v('f-cpf'))         set('f-cpf',       d.cpf || '');
+  if (d.rg && !v('f-rg'))           set('f-rg',         d.rg || '');
+  if (d.endereco && !v('f-endereco')) set('f-endereco', d.endereco || '');
+  // Dados clínicos — só leitura
+  if (d.qp) {
+    set('f-qp', d.qp + (d.qs ? '\n' + d.qs : ''));
+    document.getElementById('f-qp').readOnly = true;
+    var obs = [d.antecedentes, d.tabagismo, d.medicacoes].filter(Boolean).join(' · ');
+    set('f-obs-clin', obs);
+    document.getElementById('secao-clinica').style.display = 'block';
+  }
+}
+
+function resetBusca() {
+  estado.linhaPre = null;
+  estado.dadosPre = null;
+  document.getElementById('badge-pre').style.display = 'none';
+  alertar('alerta-busca', '', '');
+  document.getElementById('secao-clinica').style.display = 'none';
+  set('f-qp', ''); set('f-obs-clin', '');
+}
+
+// ══ ENVIAR ══
+function enviarRecepcao() {
+  var nome      = v('f-nome').trim();
+  var dn        = v('f-dn').trim();
+  var clinica   = v('f-clinica');
+  var pagamento = v('f-pagamento');
+
+  if (!nome || !dn)   { alertar('alerta-envio', 'erro', 'Nome e data de nascimento obrigatórios.'); return; }
+  if (!clinica)        { alertar('alerta-envio', 'erro', 'Selecione a clínica.'); return; }
+  if (!pagamento)      { alertar('alerta-envio', 'erro', 'Informe a forma de pagamento.'); return; }
+
+  var payload = {
+    acao:          'salvar',
+    recepcionista: estado.nomeExibicao,
+    nome:          nome,
+    data_nasc:     dn,
+    clinica:       clinica,
+    cpf:           v('f-cpf'),
+    rg:            v('f-rg'),
+    endereco:      v('f-endereco'),
+    cidade:        v('f-cidade'),
+    pagamento:     pagamento,
+    valor:         v('f-valor'),
+    recibo:        v('f-recibo'),
+    cpf_pagador:   v('f-cpf-pag'),
+    observacoes:   v('f-obs'),
+    linha_pre:     estado.linhaPre,
+    // Dados clínicos do pré-atendimento para o Doc do paciente
+    qp:            estado.dadosPre ? estado.dadosPre.qp          : '',
+    qs:            estado.dadosPre ? estado.dadosPre.qs           : '',
+    antecedentes:  estado.dadosPre ? estado.dadosPre.antecedentes : '',
+    outros_antec:  estado.dadosPre ? estado.dadosPre.outros_antec : '',
+    tabagismo:     estado.dadosPre ? estado.dadosPre.tabagismo    : '',
+    medicacoes:    estado.dadosPre ? estado.dadosPre.medicacoes   : '',
+    alergias:      estado.dadosPre ? estado.dadosPre.alergias     : '',
+    whatsapp:      estado.dadosPre ? estado.dadosPre.whatsapp     : '',
+  };
+
+  spinner('sp-enviar', true);
+  btn('btn-enviar', true);
+  alertar('alerta-envio', '', '');
+
+  fetch(ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    spinner('sp-enviar', false);
+    btn('btn-enviar', false);
+    if (res.ok) {
+      document.getElementById('conf-nome').textContent = nome + ' · DN ' + dn;
+      document.getElementById('conf-clinica').textContent = clinica.split(' —')[0];
+      if (res.doc_url) {
+        var linkDoc = document.getElementById('conf-doc');
+        linkDoc.href = res.doc_url;
+        linkDoc.style.display = 'inline';
+      } else {
+        document.getElementById('conf-doc').style.display = 'none';
+      }
+      mostrar('tela-form', false);
+      mostrar('tela-confirmacao', true);
+      window.scrollTo(0, 0);
+    } else {
+      alertar('alerta-envio', 'erro', res.erro || 'Erro ao salvar. Tente novamente.');
+    }
+  })
+  .catch(() => {
+    spinner('sp-enviar', false);
+    btn('btn-enviar', false);
+    alertar('alerta-envio', 'erro', 'Erro de conexão.');
+  });
+}
+
+// ══ NOVO ATENDIMENTO ══
+function novoAtendimento() {
+  ['f-nome','f-dn','f-cpf','f-rg','f-endereco','f-cidade',
+   'f-valor','f-cpf-pag','f-obs','f-qp','f-obs-clin'].forEach(id => set(id, ''));
+  ['f-clinica','f-pagamento','f-recibo'].forEach(id => {
+    var el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  // Restaura clínica padrão
+  if (estado.clinicaPadrao) {
+    var sel = document.getElementById('f-clinica');
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value.indexOf(estado.clinicaPadrao) >= 0) {
+        sel.selectedIndex = i; break;
+      }
+    }
+  }
+  estado.linhaPre = null;
+  estado.dadosPre = null;
+  document.getElementById('badge-pre').style.display = 'none';
+  document.getElementById('secao-clinica').style.display = 'none';
+  ['alerta-busca','alerta-envio'].forEach(id => alertar(id, '', ''));
+  mostrar('tela-confirmacao', false);
+  mostrar('tela-form', true);
+  document.getElementById('f-nome').focus();
+}
+
+// ══ UTILITÁRIOS ══
+function v(id) {
+  var el = document.getElementById(id);
+  return el ? el.value : '';
+}
+function set(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function mostrar(id, sim) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (sim) el.classList.remove('hidden');
+  else el.classList.add('hidden');
+}
+function spinner(id, sim) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = sim ? 'inline-block' : 'none';
+}
+function btn(id, desabilitado) {
+  var el = document.getElementById(id);
+  if (el) el.disabled = desabilitado;
+}
+function alertar(id, tipo, msg) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'alerta' + (tipo ? ' alerta-' + tipo + ' visivel' : '');
+  el.textContent = msg;
+}
+function validarDN(s) {
+  return /^\d{2}\/\d{2}\/(\d{4}|\d{2})$/.test(s);
+}
+function mascaraDN(el) {
+  var v = el.value.replace(/\D/g,'');
+  if (v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
+  if (v.length >= 6) v = v.slice(0,5)+'/'+v.slice(5,9);
+  el.value = v;
+}
+function mascaraCPF(el) {
+  var v = el.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
+  else if (v.length > 6) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6);
+  else if (v.length > 3) v = v.slice(0,3)+'.'+v.slice(3);
+  el.value = v;
+}
+
+// Enter no login
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('inp-senha').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') fazerLogin();
+  });
+});
+</script>
+</body>
+</html>
