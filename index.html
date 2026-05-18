@@ -546,11 +546,13 @@ function buscarPaciente() {
       estado.linhaPre = res.linha_pre || null;
       estado.dadosPre = res.dados;
       preencherDados(res.dados);
-      var msg = res.origem === 'indice'
-        ? '📁 Paciente localizado no índice. Confira as pistas mascaradas com o paciente.'
-        : (res.historico
+      var msg = res.origem === 'indice_nome'
+        ? '📁 Nome localizado no índice local. Confirme os dados mascarados e complete o cadastro.'
+        : (res.origem === 'indice'
+          ? '📁 Paciente localizado no índice. Confira as pistas mascaradas com o paciente.'
+          : (res.historico
           ? '📁 Paciente já atendido anteriormente. Dados de histórico carregados para conferência.'
-          : '✅ Ficha de pré-atendimento encontrada e carregada.');
+          : '✅ Ficha de pré-atendimento encontrada e carregada.'));
       alertar('alerta-busca', 'ok', msg);
       document.getElementById('badge-pre').textContent =
         res.historico ? '📁 Paciente retorno' : '✅ Pré-atendimento vinculado';
@@ -558,7 +560,10 @@ function buscarPaciente() {
     } else {
       estado.linhaPre = null;
       estado.dadosPre = null;
-      alertar('alerta-busca', 'aviso', '🆕 Paciente não encontrado no sistema. Será cadastrado como novo.');
+      var avisoBusca = res.multiplos
+        ? '⚠️ Há mais de um paciente local com esse nome. Confirme por CPF/telefone e registre a entrada atual.'
+        : '🆕 Paciente não encontrado no sistema. Será cadastrado como novo.';
+      alertar('alerta-busca', 'aviso', avisoBusca);
       document.getElementById('badge-pre').style.display = 'none';
     }
   })
