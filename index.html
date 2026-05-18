@@ -146,6 +146,13 @@
     color: var(--texto);
   }
   .hint.visivel { display: block; }
+  .masked-field {
+    color: var(--sub);
+    background: #f8fafc;
+    border-color: #aab8c6;
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    letter-spacing: .02em;
+  }
   textarea { resize: vertical; min-height: 70px; }
 
   .linha-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -580,19 +587,14 @@ function buscarPaciente() {
 
 function preencherDados(d) {
   limparPistas();
-  // Campos completos podem vir do pré-atendimento recente. Dados históricos entram como pista mascarada.
-  if (d.cidade && !v('f-cidade'))   set('f-cidade',   d.cidade);
-  if (d.cpf && !v('f-cpf'))         set('f-cpf',       d.cpf || '');
-  if (d.rg && !v('f-rg'))           set('f-rg',         d.rg || '');
-  if (d.endereco && !v('f-endereco')) set('f-endereco', d.endereco || '');
-  if ((d.telefone || d.whatsapp) && !v('f-telefone')) set('f-telefone', d.telefone || d.whatsapp || '');
-  if (d.email && !v('f-email'))     set('f-email',     d.email || '');
+  // Campos completos podem vir do pré-atendimento recente. Dados históricos entram como máscara no próprio campo.
+  if (d.cidade && !v('f-cidade')) set('f-cidade', d.cidade);
 
-  pista('hint-cpf', d.cpf_mascara ? 'Cadastrado: ' + d.cpf_mascara + ' · confirme e digite o CPF completo se necessário.' : '');
-  pista('hint-rg', d.rg_mascara ? 'Cadastrado: ' + d.rg_mascara + ' · confirme antes de usar.' : '');
-  pista('hint-telefone', d.telefone_mascara ? 'Cadastrado: ' + d.telefone_mascara + ' · confirme e digite o telefone completo se necessário.' : '');
-  pista('hint-email', d.email_mascara ? 'Cadastrado: ' + d.email_mascara + ' · confirme e digite o e-mail completo se necessário.' : '');
-  pista('hint-endereco', d.endereco_mascara ? 'Cadastrado: ' + d.endereco_mascara + ' · confirme e atualize se mudou.' : '');
+  preencherSensivel('f-cpf', d.cpf, d.cpf_mascara);
+  preencherSensivel('f-rg', d.rg, d.rg_mascara);
+  preencherSensivel('f-telefone', d.telefone || d.whatsapp, d.telefone_mascara);
+  preencherSensivel('f-email', d.email, d.email_mascara);
+  preencherSensivel('f-endereco', d.endereco, d.endereco_mascara);
 
   // Dados clínicos — só leitura
   if (d.qp) {
@@ -631,12 +633,12 @@ function enviarRecepcao() {
     nome:          nome,
     data_nasc:     dn,
     clinica:       clinica,
-    cpf:           v('f-cpf'),
-    rg:            v('f-rg'),
-    endereco:      v('f-endereco'),
+    cpf:           valorReal('f-cpf'),
+    rg:            valorReal('f-rg'),
+    endereco:      valorReal('f-endereco'),
     cidade:        v('f-cidade'),
-    telefone:      v('f-telefone'),
-    email:         v('f-email'),
+    telefone:      valorReal('f-telefone'),
+    email:         valorReal('f-email'),
     pagamento:     pagamento,
     valor:         v('f-valor'),
     recibo:        v('f-recibo'),
@@ -651,7 +653,7 @@ function enviarRecepcao() {
     tabagismo:     estado.dadosPre ? estado.dadosPre.tabagismo    : '',
     medicacoes:    estado.dadosPre ? estado.dadosPre.medicacoes   : '',
     alergias:      estado.dadosPre ? estado.dadosPre.alergias     : '',
-    whatsapp:      v('f-telefone') || (estado.dadosPre ? estado.dadosPre.whatsapp : ''),
+    whatsapp:      valorReal('f-telefone'),
   };
 
   spinner('sp-enviar', true);
@@ -725,7 +727,10 @@ function v(id) {
 }
 function set(id, val) {
   var el = document.getElementById(id);
-  if (el) el.value = val;
+  if (el) {
+    el.value = val;
+    if (!val) limparMarcacaoMascara(el);
+  }
 }
 function mostrar(id, sim) {
   var el = document.getElementById(id);
@@ -746,6 +751,67 @@ function alertar(id, tipo, msg) {
   if (!el) return;
   el.className = 'alerta' + (tipo ? ' alerta-' + tipo + ' visivel' : '');
   el.textContent = msg;
+}
+function preencherSensivel(id, valorCompleto, valorMascara) {
+  var el = document.getElementById(id);
+  if (!el || v(id)) return;
+  var mascara = valorMascara || mascararLocal(id, valorCompleto);
+  if (!mascara) return;
+  el.value = mascara;
+  el.dataset.masked = '1';
+  el.classList.add('masked-field');
+}
+function valorReal(id) {
+  var el = document.getElementById(id);
+  if (!el) return '';
+  return el.dataset.masked === '1' ? '' : el.value;
+}
+function prepararEdicaoMascara(el) {
+  if (!el || el.dataset.masked !== '1') return;
+  el.value = '';
+  delete el.dataset.masked;
+  el.classList.remove('masked-field');
+}
+function limparMarcacaoMascara(el) {
+  if (!el) return;
+  delete el.dataset.masked;
+  el.classList.remove('masked-field');
+}
+function mascararLocal(id, valor) {
+  if (!valor) return '';
+  if (id === 'f-cpf') return mascararCPFValor(valor);
+  if (id === 'f-telefone') return mascararTelefoneValor(valor);
+  if (id === 'f-email') return mascararEmailValor(valor);
+  if (id === 'f-endereco') return mascararEnderecoValor(valor);
+  if (id === 'f-rg') return mascararTextoCurtoValor(valor);
+  return '';
+}
+function mascararCPFValor(valor) {
+  var d = String(valor || '').replace(/\D/g, '');
+  if (d.length < 4) return '';
+  return '***.***.***-' + d.slice(-2);
+}
+function mascararTelefoneValor(valor) {
+  var d = String(valor || '').replace(/\D/g, '');
+  if (d.length < 4) return '';
+  return '*'.repeat(Math.max(4, d.length - 4)) + d.slice(-4);
+}
+function mascararEmailValor(valor) {
+  var s = String(valor || '').trim();
+  var partes = s.split('@');
+  if (partes.length !== 2 || !partes[0]) return '';
+  return partes[0].charAt(0) + '***@' + partes[1];
+}
+function mascararEnderecoValor(valor) {
+  var s = String(valor || '').trim();
+  if (!s) return '';
+  if (s.length <= 10) return s.charAt(0) + '***';
+  return s.slice(0, 8) + ' *** ' + s.slice(-6);
+}
+function mascararTextoCurtoValor(valor) {
+  var s = String(valor || '').trim();
+  if (s.length < 3) return '';
+  return '***' + s.slice(-3);
 }
 function pista(id, msg) {
   var el = document.getElementById(id);
@@ -778,6 +844,10 @@ function mascaraCPF(el) {
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('inp-senha').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') fazerLogin();
+  });
+  ['f-cpf','f-rg','f-telefone','f-email','f-endereco'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('focus', function() { prepararEdicaoMascara(el); });
   });
 });
 </script>
