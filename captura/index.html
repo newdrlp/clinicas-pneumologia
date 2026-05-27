@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Captura de Ficha — Pneumologia PE</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --azul: #163554;
+    --azul-m: #285b84;
+    --verde: #1f6e4a;
+    --verde-m: #2a8f61;
+    --cinza: #f4f6f8;
+    --borda: #cbd7e4;
+    --texto: #172333;
+    --sub: #58697d;
+    --erro: #b83232;
+    --aviso: #7a5c00;
+    --ok: #1f6e4a;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #eef2f6;
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--azul);
+    color: #fff;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(0,0,0,.22);
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.08rem;
+    font-weight: 400;
+    letter-spacing: .02em;
+  }
+
+  #badge-usuario {
+    display: none;
+    font-size: .78rem;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.15);
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 22px 14px 70px;
+  }
+
+  .secao {
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.06);
+  }
+
+  .secao-titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Serif Display', serif;
+    color: var(--azul);
+    font-size: 1.05rem;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--cinza);
+  }
+
+  .icone {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--azul);
+    color: #fff;
+    font-size: .95rem;
+  }
+
+  .campo { margin-bottom: 14px; }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+    color: var(--sub);
+  }
+
+  input, select, textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 13px;
+    border: 1.7px solid var(--borda);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--texto);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+  }
+
+  textarea {
+    min-height: 92px;
+    resize: vertical;
+    line-height: 1.48;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--azul-m);
+    box-shadow: 0 0 0 3px rgba(40,91,132,.13);
+  }
+
+  .linha-dupla {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .hint {
+    display: block;
+    margin-top: 6px;
+    color: var(--sub);
+    font-size: .84rem;
+    line-height: 1.42;
+  }
+
+  .btn {
+    width: 100%;
+    min-height: 48px;
+    border: none;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .98rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .1s, background .15s;
+  }
+
+  .btn:active { transform: scale(.985); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-primario { background: var(--azul); color: #fff; }
+  .btn-primario:hover { background: var(--azul-m); }
+  .btn-verde { background: var(--verde); color: #fff; }
+  .btn-verde:hover { background: var(--verde-m); }
+  .btn-secundario { background: var(--cinza); color: var(--azul); border: 1.5px solid var(--borda); }
+
+  .alerta {
+    display: none;
+    padding: 12px 14px;
+    margin-bottom: 13px;
+    border-radius: 8px;
+    font-size: .92rem;
+    line-height: 1.45;
+  }
+  .alerta.visivel { display: block; }
+  .alerta-ok { background: #e8f5ee; border: 1px solid #a8d9b8; color: var(--ok); }
+  .alerta-aviso { background: #fff8e1; border: 1px solid #ffe082; color: var(--aviso); }
+  .alerta-erro { background: #fdecea; border: 1px solid #f5c6c2; color: var(--erro); }
+
+  .preview {
+    display: none;
+    margin-top: 12px;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0b1622;
+  }
+  .preview img {
+    display: block;
+    width: 100%;
+    max-height: 460px;
+    object-fit: contain;
+    background: #0b1622;
+  }
+
+  .progresso {
+    display: none;
+    margin-top: 12px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    background: #eef5fb;
+    border: 1px solid #c8dcee;
+    color: var(--azul);
+    font-size: .9rem;
+  }
+  .progresso.visivel { display: block; }
+
+  .raw-ocr {
+    min-height: 150px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    font-size: .92rem;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    display: none;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,.42);
+    border-top-color: #fff;
+    animation: spin .65s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #tela-login {
+    max-width: 390px;
+    margin: 55px auto 0;
+  }
+
+  .logo-login {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .logo-login p {
+    font-family: 'DM Serif Display', serif;
+    color: var(--azul);
+    font-size: 1.5rem;
+  }
+  .logo-login small {
+    color: var(--sub);
+    font-size: .84rem;
+  }
+
+  #tela-confirmacao {
+    text-align: center;
+  }
+  #tela-confirmacao h2 {
+    font-family: 'DM Serif Display', serif;
+    color: var(--verde);
+    margin-bottom: 9px;
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 520px) {
+    main { padding: 18px 10px 62px; }
+    .secao { padding: 18px 13px; }
+    .linha-dupla { grid-template-columns: 1fr; gap: 0; }
+    header h1 { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pneumologia PE · Captura</h1>
+  <span id="badge-usuario"></span>
+</header>
+
+<main>
+  <div id="tela-login">
+    <div class="logo-login">
+      <p>Captura de Ficha</p>
+      <small>Uso interno · Dr. Lucas Pereira de Souza</small>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">🔐</span> Acesso</div>
+      <div class="campo">
+        <label>Usuário</label>
+        <input type="text" id="inp-usuario" autocomplete="username" placeholder="usuário">
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="inp-senha" autocomplete="current-password" placeholder="senha">
+      </div>
+      <div id="alerta-login" class="alerta alerta-erro"></div>
+      <button class="btn btn-primario" id="btn-login" onclick="fazerLogin()">
+        <span class="spinner" id="sp-login"></span>
+        Entrar
+      </button>
+    </div>
+  </div>
+
+  <div id="tela-app" class="hidden">
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">📷</span> Foto da ficha</div>
+      <div class="campo">
+        <label>Capturar ou escolher imagem</label>
+        <input type="file" id="arquivo" accept="image/*" capture="environment">
+        <span class="hint">Use boa luz, enquadre a folha inteira e evite sombra sobre o nome/data.</span>
+      </div>
+      <div class="preview" id="preview-wrap">
+        <img id="preview" alt="Pré-visualização da ficha capturada">
+      </div>
+      <div class="linha-dupla">
+        <button class="btn btn-primario" id="btn-ocr" onclick="executarOCR()" disabled>
+          <span class="spinner" id="sp-ocr"></span>
+          Ler imagem
+        </button>
+        <button class="btn btn-secundario" onclick="limparCaptura()">Limpar captura</button>
+      </div>
+      <div id="ocr-status" class="progresso"></div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">🧾</span> Texto reconhecido</div>
+      <div class="campo">
+        <label>OCR bruto</label>
+        <textarea id="ocr-texto" class="raw-ocr" placeholder="O texto lido da imagem aparecerá aqui. Você também pode colar texto manualmente."></textarea>
+      </div>
+      <button class="btn btn-secundario" onclick="extrairCampos()">Extrair campos do texto</button>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">👤</span> Entrada reestruturada</div>
+      <div class="campo">
+        <label>Nome completo *</label>
+        <input type="text" id="f-nome" placeholder="Nome completo">
+      </div>
+      <div class="linha-dupla">
+        <div class="campo">
+          <label>Data de nascimento *</label>
+          <input type="text" id="f-dn" placeholder="DD/MM/AAAA" maxlength="10" oninput="mascaraDN(this)">
+        </div>
+        <div class="campo">
+          <label>CPF</label>
+          <input type="text" id="f-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+        </div>
+      </div>
+      <div class="linha-dupla">
+        <div class="campo">
+          <label>Telefone/WhatsApp</label>
+          <input type="tel" id="f-telefone" placeholder="(81) 99999-9999">
+        </div>
+        <div class="campo">
+          <label>E-mail</label>
+          <input type="email" id="f-email" placeholder="email@exemplo.com">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Endereço</label>
+        <input type="text" id="f-endereco" placeholder="Rua, número, bairro">
+      </div>
+      <div class="linha-dupla">
+        <div class="campo">
+          <label>Cidade</label>
+          <input type="text" id="f-cidade" placeholder="Cidade">
+        </div>
+        <div class="campo">
+          <label>Clínica *</label>
+          <select id="f-clinica">
+            <option value="">Selecione…</option>
+            <option value="Caruaru Clinical Center — Caruaru PE">Caruaru Clinical Center</option>
+            <option value="Clínica Santa Joana — Palmares PE">Clínica Santa Joana — Palmares</option>
+            <option value="Gravatá Clinical Center — Gravatá PE">Gravatá Clinical Center</option>
+            <option value="Clinical+Saúde — Jaboatão dos Guararapes PE">Clinical+Saúde — Jaboatão</option>
+            <option value="Clínica Magalhães Pedrosa — Limoeiro PE">Clínica Magalhães Pedrosa — Limoeiro</option>
+            <option value="Clínica Carpina — Carpina PE">Clínica Carpina</option>
+            <option value="Consultório Médico Vida e Saúde — Cajueiro Seco PE">Vida e Saúde — Cajueiro Seco</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">💰</span> Financeiro e observações</div>
+      <div class="linha-dupla">
+        <div class="campo">
+          <label>Forma de pagamento</label>
+          <select id="f-pagamento">
+            <option>Não informado</option>
+            <option>Pix</option>
+            <option>Dinheiro</option>
+            <option>Cartão de débito</option>
+            <option>Cartão de crédito</option>
+            <option>Convênio</option>
+            <option>Cortesia</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Valor (R$)</label>
+          <input type="text" id="f-valor" placeholder="350,00">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Queixa / motivo informado na ficha</label>
+        <textarea id="f-qp" rows="3" placeholder="Queixa ou motivo, se vier na ficha"></textarea>
+      </div>
+      <div class="campo">
+        <label>Observações</label>
+        <textarea id="f-obs" rows="3" placeholder="Ajustes manuais, observações da captura, dados incompletos…"></textarea>
+      </div>
+    </div>
+
+    <div id="alerta-envio" class="alerta"></div>
+    <button class="btn btn-verde" id="btn-enviar" onclick="enviarEntrada()">
+      <span class="spinner" id="sp-enviar"></span>
+      Registrar entrada estruturada
+    </button>
+  </div>
+
+  <div id="tela-confirmacao" class="secao hidden">
+    <h2>Entrada registrada</h2>
+    <p id="conf-dados" style="color:var(--sub); margin-bottom:16px"></p>
+    <a id="conf-doc" href="#" target="_blank" style="display:none;color:var(--azul-m)">Abrir documento gerado</a>
+    <br><br>
+    <button class="btn btn-primario" onclick="novaCaptura()">Nova captura</button>
+  </div>
+</main>
+
+<script>
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
+
+var estado = {
+  usuario: '',
+  nomeExibicao: '',
+  clinicaPadrao: '',
+  imagemUrl: '',
+  arquivoNome: ''
+};
+
+function fazerLogin() {
+  var usuario = v('inp-usuario').trim();
+  var senha = v('inp-senha').trim();
+  if (!usuario || !senha) {
+    alertar('alerta-login', 'erro', 'Preencha usuário e senha.');
+    return;
+  }
+  spinner('sp-login', true);
+  btn('btn-login', true);
+  fetch(ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({ acao: 'login', usuario: usuario, senha: senha })
+  })
+  .then(r => r.json())
+  .then(res => {
+    spinner('sp-login', false);
+    btn('btn-login', false);
+    if (!res.ok) {
+      alertar('alerta-login', 'erro', res.erro || 'Credenciais inválidas.');
+      return;
+    }
+    estado.usuario = usuario;
+    estado.nomeExibicao = res.nome_exibicao || usuario;
+    estado.clinicaPadrao = res.clinica_padrao || '';
+    document.getElementById('badge-usuario').textContent = estado.nomeExibicao;
+    document.getElementById('badge-usuario').style.display = 'inline-block';
+    mostrar('tela-login', false);
+    mostrar('tela-app', true);
+    selecionarClinicaPadrao();
+  })
+  .catch(() => {
+    spinner('sp-login', false);
+    btn('btn-login', false);
+    alertar('alerta-login', 'erro', 'Erro de conexão no login.');
+  });
+}
+
+document.getElementById('arquivo').addEventListener('change', function() {
+  var file = this.files && this.files[0];
+  if (!file) return;
+  estado.arquivoNome = file.name || 'captura';
+  if (estado.imagemUrl) URL.revokeObjectURL(estado.imagemUrl);
+  estado.imagemUrl = URL.createObjectURL(file);
+  document.getElementById('preview').src = estado.imagemUrl;
+  document.getElementById('preview-wrap').style.display = 'block';
+  document.getElementById('btn-ocr').disabled = false;
+  statusOCR('Imagem carregada. Toque em "Ler imagem".');
+});
+
+function executarOCR() {
+  if (!estado.imagemUrl) {
+    statusOCR('Escolha ou capture uma imagem primeiro.', true);
+    return;
+  }
+  if (!window.Tesseract) {
+    statusOCR('Biblioteca OCR não carregou. Verifique a internet e tente novamente.', true);
+    return;
+  }
+  spinner('sp-ocr', true);
+  btn('btn-ocr', true);
+  statusOCR('Preparando leitura OCR...');
+  Tesseract.recognize(estado.imagemUrl, 'por', {
+    logger: function(m) {
+      if (m.status === 'recognizing text') {
+        statusOCR('Lendo texto: ' + Math.round((m.progress || 0) * 100) + '%');
+      } else if (m.status) {
+        statusOCR(m.status);
+      }
+    }
+  })
+  .then(function(result) {
+    spinner('sp-ocr', false);
+    btn('btn-ocr', false);
+    var texto = result && result.data ? (result.data.text || '') : '';
+    document.getElementById('ocr-texto').value = texto.trim();
+    statusOCR('Leitura concluída. Revise o texto e os campos extraídos.');
+    extrairCampos();
+  })
+  .catch(function() {
+    spinner('sp-ocr', false);
+    btn('btn-ocr', false);
+    statusOCR('Não consegui ler a imagem. Você pode colar/digitar o texto no campo OCR bruto.', true);
+  });
+}
+
+function extrairCampos() {
+  var texto = v('ocr-texto');
+  if (!texto.trim()) {
+    statusOCR('Cole ou capture algum texto antes de extrair os campos.', true);
+    return;
+  }
+  var linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  var cpf = extrairRegex(texto, /\b\d{3}\.?\d{3}\.?\d{3}[-\s]?\d{2}\b/);
+  var email = extrairRegex(texto, /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  var telefone = extrairTelefone(texto);
+  var dn = extrairDataNascimento(texto);
+  var valor = extrairValor(texto);
+  var nome = extrairPorRotulo(linhas, ['nome', 'paciente']) || inferirNome(linhas);
+  var endereco = extrairPorRotulo(linhas, ['endereço', 'endereco', 'rua', 'avenida', 'av.']);
+  var cidade = extrairPorRotulo(linhas, ['cidade', 'município', 'municipio']);
+  var qp = extrairPorRotulo(linhas, ['queixa', 'motivo', 'observação', 'observacao']);
+  var clinica = inferirClinica(texto);
+  var pagamento = inferirPagamento(texto);
+
+  if (nome && !v('f-nome')) set('f-nome', limparValor(nome));
+  if (dn && !v('f-dn')) set('f-dn', dn);
+  if (cpf && !v('f-cpf')) set('f-cpf', formatarCPF(cpf));
+  if (telefone && !v('f-telefone')) set('f-telefone', telefone);
+  if (email && !v('f-email')) set('f-email', email);
+  if (endereco && !v('f-endereco')) set('f-endereco', limparValor(endereco));
+  if (cidade && !v('f-cidade')) set('f-cidade', limparValor(cidade));
+  if (valor && !v('f-valor')) set('f-valor', valor);
+  if (qp && !v('f-qp')) set('f-qp', limparValor(qp));
+  if (clinica) setSelectPorTexto('f-clinica', clinica);
+  if (pagamento) setSelectPorTexto('f-pagamento', pagamento);
+
+  if (!v('f-obs')) {
+    set('f-obs', 'Entrada por captura de ficha. Revisar dados extraídos do OCR antes do atendimento.');
+  }
+  statusOCR('Campos extraídos. Confira tudo antes de registrar.');
+}
+
+function enviarEntrada() {
+  var nome = v('f-nome').trim();
+  var dn = v('f-dn').trim();
+  var clinica = v('f-clinica');
+  if (!nome || !dn || !clinica) {
+    alertar('alerta-envio', 'erro', 'Nome, data de nascimento e clínica são obrigatórios.');
+    return;
+  }
+
+  var obs = v('f-obs');
+  var textoOCR = v('ocr-texto').trim();
+  var payload = {
+    acao: 'salvar',
+    recepcionista: estado.nomeExibicao || 'Captura interna',
+    nome: nome,
+    data_nasc: dn,
+    clinica: clinica,
+    cpf: v('f-cpf'),
+    rg: '',
+    endereco: v('f-endereco'),
+    cidade: v('f-cidade'),
+    telefone: v('f-telefone'),
+    email: v('f-email'),
+    pagamento: v('f-pagamento') || 'Não informado',
+    valor: v('f-valor'),
+    recibo: '',
+    cpf_pagador: '',
+    observacoes: obs + (textoOCR ? '\n\nOCR bruto revisado:\n' + textoOCR : ''),
+    linha_pre: '',
+    qp: v('f-qp'),
+    qs: '',
+    antecedentes: '',
+    outros_antec: '',
+    tabagismo: '',
+    medicacoes: '',
+    alergias: '',
+    whatsapp: v('f-telefone')
+  };
+
+  spinner('sp-enviar', true);
+  btn('btn-enviar', true);
+  alertar('alerta-envio', '', '');
+  fetch(ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    spinner('sp-enviar', false);
+    btn('btn-enviar', false);
+    if (!res.ok) {
+      alertar('alerta-envio', 'erro', res.erro || 'Erro ao registrar entrada.');
+      return;
+    }
+    document.getElementById('conf-dados').textContent = nome + ' · DN ' + dn + ' · ' + clinica.split(' —')[0];
+    if (res.doc_url) {
+      var a = document.getElementById('conf-doc');
+      a.href = res.doc_url;
+      a.style.display = 'inline';
+    }
+    mostrar('tela-app', false);
+    mostrar('tela-confirmacao', true);
+    window.scrollTo(0, 0);
+  })
+  .catch(() => {
+    spinner('sp-enviar', false);
+    btn('btn-enviar', false);
+    alertar('alerta-envio', 'erro', 'Erro de conexão ao registrar entrada.');
+  });
+}
+
+function extrairRegex(texto, re) {
+  var m = texto.match(re);
+  return m ? m[0].trim() : '';
+}
+
+function extrairTelefone(texto) {
+  var m = texto.match(/(?:\(?\d{2}\)?\s*)?(?:9\s*)?\d{4}[-\s]?\d{4}/);
+  return m ? m[0].replace(/\s+/g, ' ').trim() : '';
+}
+
+function extrairDataNascimento(texto) {
+  var rotulo = texto.match(/(?:nasc(?:imento)?|data\s*de\s*nasc(?:imento)?|dn)[:\s-]*(\d{1,2}[\/.-]\d{1,2}[\/.-](?:\d{2}|\d{4}))/i);
+  if (rotulo) return normalizarData(rotulo[1]);
+  var datas = texto.match(/\b\d{1,2}[\/.-]\d{1,2}[\/.-](?:\d{2}|\d{4})\b/g);
+  return datas && datas.length ? normalizarData(datas[0]) : '';
+}
+
+function extrairValor(texto) {
+  var m = texto.match(/(?:R\$\s*)?\d{2,4}[,.]\d{2}/);
+  return m ? m[0].replace(/^R\$\s*/, '') : '';
+}
+
+function extrairPorRotulo(linhas, rotulos) {
+  for (var i = 0; i < linhas.length; i++) {
+    var linha = linhas[i];
+    var n = semAcento(linha.toLowerCase());
+    for (var r = 0; r < rotulos.length; r++) {
+      var rot = semAcento(rotulos[r].toLowerCase());
+      if (n.indexOf(rot) >= 0) {
+        var partes = linha.split(/[:\-]/);
+        if (partes.length > 1 && partes.slice(1).join('-').trim()) return partes.slice(1).join('-').trim();
+        if (i + 1 < linhas.length) return linhas[i + 1];
+      }
+    }
+  }
+  return '';
+}
+
+function inferirNome(linhas) {
+  var proibidas = /clinica|pneumologia|recepcao|cpf|telefone|whatsapp|endereco|data|nascimento|pagamento|valor|consulta|ficha/i;
+  for (var i = 0; i < linhas.length; i++) {
+    var l = linhas[i].trim();
+    if (l.length < 7 || proibidas.test(l) || /\d/.test(l)) continue;
+    var palavras = l.split(/\s+/).filter(Boolean);
+    if (palavras.length >= 2) return l;
+  }
+  return '';
+}
+
+function inferirClinica(texto) {
+  var t = semAcento(texto.toLowerCase());
+  if (t.includes('caruaru')) return 'Caruaru Clinical Center';
+  if (t.includes('palmares') || t.includes('santa joana')) return 'Clínica Santa Joana';
+  if (t.includes('gravata')) return 'Gravatá Clinical Center';
+  if (t.includes('jaboatao') || t.includes('clinical+')) return 'Clinical+Saúde';
+  if (t.includes('limoeiro') || t.includes('magalhaes')) return 'Clínica Magalhães Pedrosa';
+  if (t.includes('carpina')) return 'Clínica Carpina';
+  if (t.includes('cajueiro') || t.includes('feirantes') || t.includes('vida e saude')) return 'Vida e Saúde';
+  return '';
+}
+
+function inferirPagamento(texto) {
+  var t = semAcento(texto.toLowerCase());
+  if (t.includes('pix')) return 'Pix';
+  if (t.includes('dinheiro')) return 'Dinheiro';
+  if (t.includes('debito')) return 'Cartão de débito';
+  if (t.includes('credito')) return 'Cartão de crédito';
+  if (t.includes('convenio')) return 'Convênio';
+  if (t.includes('cortesia')) return 'Cortesia';
+  return '';
+}
+
+function limparValor(s) {
+  return String(s || '').replace(/\s{2,}/g, ' ').replace(/^[\s:;.,-]+|[\s:;.,-]+$/g, '').trim();
+}
+
+function normalizarData(s) {
+  var p = String(s).replace(/[.-]/g, '/').split('/');
+  if (p.length !== 3) return s;
+  var d = p[0].padStart(2, '0');
+  var m = p[1].padStart(2, '0');
+  var a = p[2].length === 2 ? '19' + p[2] : p[2];
+  return d + '/' + m + '/' + a;
+}
+
+function formatarCPF(s) {
+  var d = String(s || '').replace(/\D/g, '').slice(0, 11);
+  if (d.length !== 11) return s;
+  return d.slice(0,3) + '.' + d.slice(3,6) + '.' + d.slice(6,9) + '-' + d.slice(9);
+}
+
+function semAcento(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function setSelectPorTexto(id, texto) {
+  var sel = document.getElementById(id);
+  if (!sel || !texto) return;
+  var alvo = semAcento(texto.toLowerCase());
+  for (var i = 0; i < sel.options.length; i++) {
+    var opt = semAcento((sel.options[i].text + ' ' + sel.options[i].value).toLowerCase());
+    if (opt.indexOf(alvo) >= 0 || alvo.indexOf(opt) >= 0) {
+      sel.selectedIndex = i;
+      return;
+    }
+  }
+}
+
+function selecionarClinicaPadrao() {
+  if (estado.clinicaPadrao) setSelectPorTexto('f-clinica', estado.clinicaPadrao);
+}
+
+function limparCaptura() {
+  document.getElementById('arquivo').value = '';
+  if (estado.imagemUrl) URL.revokeObjectURL(estado.imagemUrl);
+  estado.imagemUrl = '';
+  estado.arquivoNome = '';
+  document.getElementById('preview').src = '';
+  document.getElementById('preview-wrap').style.display = 'none';
+  document.getElementById('btn-ocr').disabled = true;
+  statusOCR('');
+}
+
+function novaCaptura() {
+  ['f-nome','f-dn','f-cpf','f-telefone','f-email','f-endereco','f-cidade','f-valor','f-qp','f-obs','ocr-texto'].forEach(id => set(id, ''));
+  ['f-clinica'].forEach(id => { var el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+  document.getElementById('f-pagamento').selectedIndex = 0;
+  selecionarClinicaPadrao();
+  limparCaptura();
+  alertar('alerta-envio', '', '');
+  mostrar('tela-confirmacao', false);
+  mostrar('tela-app', true);
+}
+
+function statusOCR(msg, erro) {
+  var el = document.getElementById('ocr-status');
+  if (!msg) {
+    el.className = 'progresso';
+    el.textContent = '';
+    return;
+  }
+  el.className = 'progresso visivel';
+  el.style.borderColor = erro ? '#f5c6c2' : '#c8dcee';
+  el.style.background = erro ? '#fdecea' : '#eef5fb';
+  el.style.color = erro ? 'var(--erro)' : 'var(--azul)';
+  el.textContent = msg;
+}
+
+function v(id) {
+  var el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function set(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.value = val || '';
+}
+
+function mostrar(id, sim) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('hidden', !sim);
+}
+
+function spinner(id, sim) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = sim ? 'inline-block' : 'none';
+}
+
+function btn(id, desabilitado) {
+  var el = document.getElementById(id);
+  if (el) el.disabled = desabilitado;
+}
+
+function alertar(id, tipo, msg) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'alerta' + (tipo ? ' alerta-' + tipo + ' visivel' : '');
+  el.textContent = msg || '';
+}
+
+function mascaraDN(el) {
+  var x = el.value.replace(/\D/g, '').slice(0, 8);
+  if (x.length >= 3) x = x.slice(0,2) + '/' + x.slice(2);
+  if (x.length >= 6) x = x.slice(0,5) + '/' + x.slice(5);
+  el.value = x;
+}
+
+function mascaraCPF(el) {
+  el.value = formatarCPF(el.value);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('inp-senha').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') fazerLogin();
+  });
+});
+</script>
+</body>
+</html>
