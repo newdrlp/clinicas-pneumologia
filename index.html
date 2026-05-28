@@ -496,14 +496,9 @@ function fazerLogin() {
   spinner('sp-login', true);
   btn('btn-login', true);
 
-  fetch(ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify({ acao: 'login', usuario: usuario, senha: senha })
-  })
+  fetchJsonComTimeout({ acao: 'login', usuario: usuario, senha: senha }, 18000)
   .then(r => r.json())
   .then(res => {
-    spinner('sp-login', false);
-    btn('btn-login', false);
     if (res.ok) {
       estado.usuario       = usuario;
       estado.nomeExibicao  = res.nome_exibicao;
@@ -525,10 +520,12 @@ function fazerLogin() {
       alertar('alerta-login', 'erro', res.erro || 'Credenciais inválidas.');
     }
   })
-  .catch(() => {
+  .catch((erro) => {
+    alertar('alerta-login', 'erro', mensagemErroConexao(erro, 'login'));
+  })
+  .finally(() => {
     spinner('sp-login', false);
     btn('btn-login', false);
-    alertar('alerta-login', 'erro', 'Erro de conexão. Tente novamente.');
   });
 }
 
@@ -543,14 +540,9 @@ function buscarPaciente() {
   btn('btn-buscar', true);
   alertar('alerta-busca', '', '');
 
-  fetch(ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify({ acao: 'buscar', nome: nome, data_nasc: dn })
-  })
+  fetchJsonComTimeout({ acao: 'buscar', nome: nome, data_nasc: dn }, 22000)
   .then(r => r.json())
   .then(res => {
-    spinner('sp-buscar', false);
-    btn('btn-buscar', false);
     if (!res.ok) { alertar('alerta-busca', 'erro', res.erro || 'Erro na busca.'); return; }
 
     if (res.encontrado) {
@@ -578,10 +570,12 @@ function buscarPaciente() {
       document.getElementById('badge-pre').style.display = 'none';
     }
   })
-  .catch(() => {
+  .catch((erro) => {
+    alertar('alerta-busca', 'erro', mensagemErroConexao(erro, 'busca'));
+  })
+  .finally(() => {
     spinner('sp-buscar', false);
     btn('btn-buscar', false);
-    alertar('alerta-busca', 'erro', 'Erro de conexão.');
   });
 }
 
@@ -660,14 +654,9 @@ function enviarRecepcao() {
   btn('btn-enviar', true);
   alertar('alerta-envio', '', '');
 
-  fetch(ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  })
+  fetchJsonComTimeout(payload, 30000)
   .then(r => r.json())
   .then(res => {
-    spinner('sp-enviar', false);
-    btn('btn-enviar', false);
     if (res.ok) {
       document.getElementById('conf-nome').textContent = nome + ' · DN ' + dn;
       document.getElementById('conf-clinica').textContent = clinica.split(' —')[0];
@@ -685,10 +674,12 @@ function enviarRecepcao() {
       alertar('alerta-envio', 'erro', res.erro || 'Erro ao salvar. Tente novamente.');
     }
   })
-  .catch(() => {
+  .catch((erro) => {
+    alertar('alerta-envio', 'erro', mensagemErroConexao(erro, 'envio'));
+  })
+  .finally(() => {
     spinner('sp-enviar', false);
     btn('btn-enviar', false);
-    alertar('alerta-envio', 'erro', 'Erro de conexão.');
   });
 }
 
@@ -751,6 +742,40 @@ function alertar(id, tipo, msg) {
   if (!el) return;
   el.className = 'alerta' + (tipo ? ' alerta-' + tipo + ' visivel' : '');
   el.textContent = msg;
+}
+function fetchJsonComTimeout(payload, tempoMs) {
+  var controller = window.AbortController ? new AbortController() : null;
+  var tempo = tempoMs || 20000;
+  var timeoutId;
+  var timeout = new Promise(function(_, reject) {
+    timeoutId = setTimeout(function() {
+      if (controller) controller.abort();
+      var erro = new Error('tempo_esgotado');
+      erro.name = 'TimeoutError';
+      reject(erro);
+    }, tempo);
+  });
+  var opcoes = {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  };
+  if (controller) opcoes.signal = controller.signal;
+  var requisicao = fetch(ENDPOINT, opcoes).then(function(resposta) {
+    if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
+    return resposta;
+  });
+  return Promise.race([requisicao, timeout]).finally(function() {
+    clearTimeout(timeoutId);
+  });
+}
+function mensagemErroConexao(erro, contexto) {
+  var acao = contexto === 'login' ? 'O login'
+    : contexto === 'envio' ? 'O registro'
+    : 'A busca';
+  if (erro && (erro.name === 'TimeoutError' || erro.name === 'AbortError')) {
+    return acao + ' demorou mais que o esperado e foi interrompido. Tente novamente; se repetir, confira a conexão ou o Apps Script.';
+  }
+  return acao + ' não conseguiu se comunicar com o servidor. Tente novamente.';
 }
 function preencherSensivel(id, valorCompleto, valorMascara) {
   var el = document.getElementById(id);
