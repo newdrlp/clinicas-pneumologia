@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Sala de Espera — Pneumologia PE</title>
+<style>
+  :root{
+    --azul:#1a3a5c; --azul2:#24476b; --bg:#eef2f6; --card:#ffffff; --linha:#dbe3ec;
+    --txt:#1f2d3d; --suave:#5b6b7b; --ok:#1f7a4d; --okbg:#e7f5ee; --aviso:#b9770e;
+    --erro:#b3261e; --errobg:#fbe9e7; --super:#b3261e; --prio:#b9770e; --normal:#46627f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+       background:var(--bg);color:var(--txt);font-size:15px}
+  .hidden{display:none!important}
+  header{background:var(--azul);color:#fff;padding:12px 16px;display:flex;align-items:center;
+         gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+  header h1{font-size:17px;margin:0;font-weight:700;flex:1;min-width:170px}
+  .badge{background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px;font-size:13px;white-space:nowrap}
+  header a{color:#cfe0f0;text-decoration:none;font-size:13px}
+  main{max-width:880px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:14px}
+  label{display:block;font-size:13px;color:var(--suave);margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1px solid var(--linha);border-radius:8px;font-size:15px;background:#fff}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:130px}
+  button{cursor:pointer;border:none;border-radius:8px;font-size:15px;font-weight:600;padding:11px 14px}
+  .btn-azul{background:var(--azul);color:#fff;width:100%}
+  .btn-azul:disabled{opacity:.6;cursor:default}
+  .flags{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:6px}
+  .flags label{display:flex;align-items:center;gap:6px;margin:0;color:var(--txt);font-size:13px;cursor:pointer}
+  .flags input{width:auto}
+  .alerta{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:14px;display:none}
+  .alerta.visivel{display:block}
+  .alerta-ok{background:var(--okbg);color:var(--ok)} .alerta-erro{background:var(--errobg);color:var(--erro)}
+  .alerta-aviso{background:#fdf4e3;color:var(--aviso)}
+  .barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .barra .info{font-size:13px;color:var(--suave);flex:1}
+  .item{background:var(--card);border:1px solid var(--linha);border-left:6px solid var(--normal);
+        border-radius:10px;padding:12px 14px;margin-bottom:10px}
+  .item.super{border-left-color:var(--super)} .item.prio{border-left-color:var(--prio)}
+  .item.fim{opacity:.6}
+  .item .top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .pos{font-weight:800;font-size:18px;color:var(--azul);min-width:26px}
+  .nome{font-weight:700;font-size:16px}
+  .meta{font-size:13px;color:var(--suave)}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+  .tag.super{background:#fbe1de;color:var(--super)} .tag.prio{background:#fbeed3;color:var(--prio)}
+  .tag.status{background:#e8eef5;color:var(--azul)}
+  .wait{font-variant-numeric:tabular-nums;font-weight:700}
+  .wait.alto{color:var(--erro)}
+  .acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .acoes button{padding:7px 10px;font-size:13px;font-weight:600;background:#eef2f6;color:var(--azul)}
+  .acoes button.go{background:var(--okbg);color:var(--ok)} .acoes button.warn{background:#fdf4e3;color:var(--aviso)}
+  .acoes a{padding:7px 10px;font-size:13px;font-weight:600;background:#eef2f6;color:var(--azul);
+           border-radius:8px;text-decoration:none}
+  .vazio{text-align:center;color:var(--suave);padding:30px 10px}
+  .sub{font-size:12px;color:var(--suave);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ════ LOGIN ════ -->
+<main id="tela-login">
+  <div class="card" style="max-width:380px;margin:40px auto">
+    <h1 style="margin:0 0 4px;color:var(--azul);font-size:20px">Sala de Espera</h1>
+    <p style="margin:0 0 12px;color:var(--suave);font-size:14px">Pneumologia PE · acesso da recepção</p>
+    <label for="inp-usuario">Usuário</label>
+    <input id="inp-usuario" autocomplete="username">
+    <label for="inp-senha">Senha</label>
+    <input id="inp-senha" type="password" autocomplete="current-password">
+    <div style="height:10px"></div>
+    <button class="btn-azul" id="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="alerta" id="alerta-login"></div>
+  </div>
+</main>
+
+<!-- ════ BOARD ════ -->
+<div id="tela-board" class="hidden">
+  <header>
+    <h1>🪑 Sala de Espera</h1>
+    <span class="badge" id="badge-usuario"></span>
+    <a href="../" title="Voltar à recepção">↩ Recepção</a>
+    <a href="#" onclick="sair();return false">Sair</a>
+  </header>
+  <main>
+    <!-- adicionar chegada -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="f-nome">Nome do paciente</label>
+          <input id="f-nome" autocomplete="off" placeholder="Nome completo">
+        </div>
+        <div style="max-width:150px">
+          <label for="f-dn">Nascimento</label>
+          <input id="f-dn" inputmode="numeric" placeholder="DD/MM/AAAA">
+        </div>
+      </div>
+      <label for="f-clinica">Clínica</label>
+      <input id="f-clinica" placeholder="Clínica do dia">
+      <div class="flags" id="f-flags">
+        <label><input type="checkbox" value="gestante">Gestante</label>
+        <label><input type="checkbox" value="lactante">Lactante</label>
+        <label><input type="checkbox" value="pcd">PCD</label>
+        <label><input type="checkbox" value="crianca_colo">Criança de colo</label>
+        <label><input type="checkbox" value="obeso">Obeso</label>
+        <label><input type="checkbox" value="tea">TEA</label>
+        <label><input type="checkbox" value="super_prioridade">★ Super-prioridade</label>
+      </div>
+      <p class="meta" style="margin:8px 0 10px">Idoso (≥60) e super-idoso (≥80) são detectados automaticamente pela data de nascimento.</p>
+      <button class="btn-azul" id="btn-add" onclick="adicionarChegada()">+ Registrar chegada</button>
+      <div class="alerta" id="alerta-add"></div>
+    </div>
+
+    <!-- controles + lista -->
+    <div class="barra">
+      <div style="max-width:170px">
+        <input type="date" id="f-data" onchange="recarregar()">
+      </div>
+      <span class="info" id="info-atualizado"></span>
+      <button style="background:#eef2f6;color:var(--azul)" onclick="recarregar()">↻ Atualizar</button>
+    </div>
+    <div id="lista"><div class="vazio">Carregando…</div></div>
+  </main>
+</div>
+
+<script>
+// ══ CONFIG ══ (mesmo endpoint da recepção — ações sala_* após o deploy)
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
+
+var estado = { usuario:'', nome:'', clinica:'' };
+var pollTimer = null, tickTimer = null;
+var renderClientMs = 0;       // Date.now() no momento do último render
+var ultimoFetchMs = 0;        // p/ "atualizado há Xs"
+
+// ══ FETCH (mesmo padrão da recepção: POST simples, lê JSON) ══
+function fetchJson(payload, tempoMs){
+  var ctrl = window.AbortController ? new AbortController() : null;
+  var tId;
+  var timeout = new Promise(function(_,rej){ tId=setTimeout(function(){ if(ctrl)ctrl.abort();
+    var e=new Error('tempo_esgotado'); e.name='TimeoutError'; rej(e); }, tempoMs||20000); });
+  var op = { method:'POST', body: JSON.stringify(payload) };
+  if(ctrl) op.signal = ctrl.signal;
+  var req = fetch(ENDPOINT, op).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r; });
+  return Promise.race([req, timeout]).finally(function(){ clearTimeout(tId); });
+}
+
+// ══ UTIL ══
+function $(id){ return document.getElementById(id); }
+function val(id){ var e=$(id); return e? e.value : ''; }
+function alerta(id,tipo,msg){ var e=$(id); if(!e)return; e.className='alerta'+(tipo?' alerta-'+tipo+' visivel':''); e.textContent=msg||''; }
+function btn(id,off){ var e=$(id); if(e)e.disabled=off; }
+function hojeISO(){ var d=new Date(); var mm=('0'+(d.getMonth()+1)).slice(-2); var dd=('0'+d.getDate()).slice(-2); return d.getFullYear()+'-'+mm+'-'+dd; }
+function escapar(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function validarDN(s){ return /^\d{2}\/\d{2}\/\d{4}$/.test(String(s||'').trim()); }
+
+// ══ LOGIN ══
+function fazerLogin(){
+  var u=val('inp-usuario').trim(), s=val('inp-senha').trim();
+  if(!u||!s){ alerta('alerta-login','erro','Preencha usuário e senha.'); return; }
+  btn('btn-login',true); alerta('alerta-login','','');
+  fetchJson({acao:'login', usuario:u, senha:s}, 18000)
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.ok){
+        aplicarSessao({usuario:u, nome:res.nome_exibicao||u, clinica:res.clinica_padrao||''});
+        try{ sessionStorage.setItem('sala_sessao', JSON.stringify(estado)); }catch(e){}
+      } else { alerta('alerta-login','erro',res.erro||'Credenciais inválidas.'); }
+    })
+    .catch(function(){ alerta('alerta-login','erro','Não foi possível conectar. Tente novamente.'); })
+    .finally(function(){ btn('btn-login',false); });
+}
+
+function aplicarSessao(sess){
+  estado = sess;
+  $('badge-usuario').textContent = '👤 '+estado.nome;
+  if(estado.clinica) $('f-clinica').value = estado.clinica;
+  $('f-data').value = hojeISO();
+  $('tela-login').classList.add('hidden');
+  $('tela-board').classList.remove('hidden');
+  iniciarPolling();
+}
+
+function sair(){
+  try{ sessionStorage.removeItem('sala_sessao'); }catch(e){}
+  if(pollTimer) clearInterval(pollTimer);
+  if(tickTimer) clearInterval(tickTimer);
+  location.reload();
+}
+
+// ══ ADICIONAR CHEGADA ══
+function adicionarChegada(){
+  var nome=val('f-nome').trim(), dn=val('f-dn').trim();
+  if(!nome||!dn){ alerta('alerta-add','erro','Informe nome e data de nascimento.'); return; }
+  if(!validarDN(dn)){ alerta('alerta-add','erro','Data no formato DD/MM/AAAA.'); return; }
+  var flags=[];
+  $('f-flags').querySelectorAll('input:checked').forEach(function(c){ flags.push(c.value); });
+  btn('btn-add',true); alerta('alerta-add','','');
+  fetchJson({acao:'sala_chegada', nome:nome, data_nasc:dn, clinica:val('f-clinica').trim(),
+             data:val('f-data')||hojeISO(), flags:flags.join(',')}, 20000)
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.ok){
+        $('f-nome').value=''; $('f-dn').value='';
+        $('f-flags').querySelectorAll('input:checked').forEach(function(c){ c.checked=false; });
+        alerta('alerta-add','ok','Chegada registrada.');
+        setTimeout(function(){ alerta('alerta-add','',''); },1800);
+        carregarLista();
+      } else { alerta('alerta-add','erro',res.erro||'Erro ao registrar.'); }
+    })
+    .catch(function(){ alerta('alerta-add','erro','Falha de conexão. Tente novamente.'); })
+    .finally(function(){ btn('btn-add',false); });
+}
+
+// ══ LISTAR + POLLING ══
+function iniciarPolling(){
+  carregarLista();
+  if(pollTimer) clearInterval(pollTimer);
+  if(tickTimer) clearInterval(tickTimer);
+  pollTimer = setInterval(carregarLista, 12000);
+  tickTimer = setInterval(tick, 1000);
+}
+function recarregar(){ carregarLista(); }
+
+function carregarLista(){
+  fetchJson({acao:'sala_listar', data:val('f-data')||hojeISO()}, 20000)
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.ok){ renderizar(res.itens||[], res.servidor_em); ultimoFetchMs=Date.now(); }
+    })
+    .catch(function(){ /* mantém a lista atual; próximo poll tenta de novo */ });
+}
+
+var TIER = { super_idoso:'super', super_prioridade:'super', idoso:'prio', prioridade:'prio', normal:'normal' };
+var STATUS_LABEL = { aguardando:'Aguardando', chamado:'Chamado', em_atendimento:'Em atendimento', concluido:'Concluído', faltou:'Faltou' };
+var PRIO_LABEL = { super_idoso:'Super-idoso ≥80', super_prioridade:'Super-prioridade', idoso:'Idoso ≥60', prioridade:'Prioridade' };
+
+function renderizar(itens, servidorIso){
+  renderClientMs = Date.now();
+  var servidorMs = Date.parse(servidorIso) || renderClientMs;
+  var lista=$('lista');
+  if(!itens.length){ lista.innerHTML='<div class="vazio">Ninguém na sala para esta data.</div>'; return; }
+
+  var ativos=[], fim=[];
+  itens.forEach(function(it){ (it.status==='concluido'||it.status==='faltou'? fim:ativos).push(it); });
+
+  var html='';
+  ativos.forEach(function(it){ html+=cartao(it, servidorMs); });
+  if(fim.length){
+    html+='<div class="sub">Concluídos / faltas</div>';
+    fim.forEach(function(it){ html+=cartao(it, servidorMs); });
+  }
+  lista.innerHTML=html;
+}
+
+function cartao(it, servidorMs){
+  var tier = TIER[it.prioridade]||'normal';
+  var fim = (it.status==='concluido'||it.status==='faltou');
+  // base de tempo (à prova de fuso): servidorMs - referência
+  var refIso = (it.status==='em_atendimento' && it.chamado_em) ? it.chamado_em : it.chegada;
+  var baseMs = '';
+  if(refIso){ var refMs=Date.parse(refIso); if(!isNaN(refMs)) baseMs = servidorMs - refMs; }
+  var rotuloTempo = it.status==='em_atendimento' ? 'em atend.' : 'espera';
+  var tempoEstatico = '';
+  if(fim){
+    if(it.concluido_em && it.chegada){ var t=Date.parse(it.concluido_em)-Date.parse(it.chegada); tempoEstatico = it.status==='concluido'? ('total '+fmtDur(t)) : ''; }
+    baseMs='';
+  }
+  var pos = it.status==='aguardando' && it.posicao ? '<span class="pos">'+it.posicao+'</span>' : '<span class="pos"></span>';
+  var prioTag = PRIO_LABEL[it.prioridade] ? '<span class="tag '+(tier==='super'?'super':'prio')+'">'+PRIO_LABEL[it.prioridade]+'</span>' : '';
+  var idade = (it.idade!==''&&it.idade!=null) ? it.idade+'a' : '';
+
+  var tempoHtml = baseMs!=='' ? '<span class="wait" data-base="'+baseMs+'">…</span> <span class="meta">'+rotuloTempo+'</span>'
+                              : (tempoEstatico? '<span class="meta">'+tempoEstatico+'</span>' : '');
+
+  var acoes='';
+  if(!fim){
+    acoes='<div class="acoes">';
+    if(it.status==='aguardando') acoes+='<button class="go" onclick="mudar(\''+enc(it.chave)+'\',\'chamado\')">Chamar</button>';
+    if(it.status==='chamado'||it.status==='aguardando') acoes+='<button class="go" onclick="mudar(\''+enc(it.chave)+'\',\'em_atendimento\')">Em atendimento</button>';
+    acoes+='<button class="go" onclick="mudar(\''+enc(it.chave)+'\',\'concluido\')">Concluir</button>';
+    acoes+='<button class="warn" onclick="mudar(\''+enc(it.chave)+'\',\'faltou\')">Faltou</button>';
+    acoes+='<a href="../?nome='+encodeURIComponent(it.nome)+'&dn='+encodeURIComponent(it.dn)+'">Editar ficha</a>';
+    acoes+='</div>';
+  } else {
+    acoes='<div class="acoes"><button onclick="mudar(\''+enc(it.chave)+'\',\'aguardando\')">↩ Reabrir</button></div>';
+  }
+
+  return '<div class="item '+tier+(fim?' fim':'')+'">'+
+    '<div class="top">'+pos+
+      '<span class="nome">'+escapar(it.nome)+'</span>'+
+      (idade?'<span class="meta">'+idade+'</span>':'')+
+      prioTag+
+      '<span class="tag status">'+(STATUS_LABEL[it.status]||it.status)+'</span>'+
+      '<span style="flex:1"></span>'+tempoHtml+
+    '</div>'+
+    '<div class="meta">'+escapar(it.clinica||'')+(it.dn?' · DN '+escapar(it.dn):'')+'</div>'+
+    acoes+'</div>';
+}
+
+function enc(s){ return String(s).replace(/'/g,"\\'"); }
+
+function tick(){
+  var agora=Date.now();
+  document.querySelectorAll('.wait[data-base]').forEach(function(el){
+    var base=Number(el.getAttribute('data-base'));
+    var ms = base + (agora - renderClientMs);
+    if(ms<0) ms=0;
+    el.textContent = fmtDur(ms);
+    if(ms > 20*60000) el.classList.add('alto'); else el.classList.remove('alto');
+  });
+  var s=$('info-atualizado');
+  if(s && ultimoFetchMs){ var seg=Math.round((Date.now()-ultimoFetchMs)/1000); s.textContent='Atualizado há '+seg+'s · auto a cada 12s'; }
+}
+
+function fmtDur(ms){
+  var seg=Math.floor(ms/1000); var h=Math.floor(seg/3600); var m=Math.floor((seg%3600)/60); var s=seg%60;
+  if(h>0) return h+'h'+('0'+m).slice(-2);
+  return m+':'+('0'+s).slice(-2);
+}
+
+// ══ MUDAR STATUS ══
+function mudar(chave, status){
+  fetchJson({acao:'sala_status', chave:chave, data:val('f-data')||hojeISO(), status:status}, 18000)
+    .then(function(r){return r.json();})
+    .then(function(res){ if(res.ok) carregarLista(); else alert(res.erro||'Erro ao atualizar.'); })
+    .catch(function(){ alert('Falha de conexão.'); });
+}
+
+// ══ INÍCIO ══
+(function(){
+  try{ var s=sessionStorage.getItem('sala_sessao'); if(s){ aplicarSessao(JSON.parse(s)); } }catch(e){}
+})();
+</script>
+</body>
+</html>

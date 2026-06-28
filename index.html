@@ -468,7 +468,9 @@
     📄 Abrir prontuário do paciente →
   </a>
   <br><br>
-  <button class="btn btn-primario" onclick="novoAtendimento()">+ Próximo paciente</button>
+  <button class="btn btn-primario" onclick="irParaSala()">🪑 Ver sala de espera</button>
+  <button class="btn btn-secundario" onclick="cancelarAutoSala()">+ Próximo paciente</button>
+  <p id="auto-sala" style="color:var(--sub);font-size:.85rem;margin-top:10px"></p>
 </div>
 
 </main>
@@ -516,6 +518,7 @@ function fazerLogin() {
           }
         }
       }
+      aplicarPrefillBusca();
     } else {
       alertar('alerta-login', 'erro', res.erro || 'Credenciais inválidas.');
     }
@@ -670,6 +673,7 @@ function enviarRecepcao() {
       mostrar('tela-form', false);
       mostrar('tela-confirmacao', true);
       window.scrollTo(0, 0);
+      agendarAutoSala();
     } else {
       alertar('alerta-envio', 'erro', res.erro || 'Erro ao salvar. Tente novamente.');
     }
@@ -709,6 +713,34 @@ function novoAtendimento() {
   mostrar('tela-confirmacao', false);
   mostrar('tela-form', true);
   document.getElementById('f-nome').focus();
+}
+
+// ══ INTEGRAÇÃO COM A SALA DE ESPERA (board /sala/) ══
+var PREFILL_BUSCA = null, autoSalaTimer = null, autoSalaContagem = null;
+function irParaSala() { window.location.href = 'sala/'; }
+function pararAutoSala() {
+  if (autoSalaTimer) { clearTimeout(autoSalaTimer); autoSalaTimer = null; }
+  if (autoSalaContagem) { clearInterval(autoSalaContagem); autoSalaContagem = null; }
+  var a = document.getElementById('auto-sala'); if (a) a.textContent = '';
+}
+function cancelarAutoSala() { pararAutoSala(); novoAtendimento(); }
+function agendarAutoSala() {
+  var seg = 3, alvo = document.getElementById('auto-sala');
+  pararAutoSala();
+  if (alvo) alvo.textContent = 'Indo para a sala de espera em ' + seg + 's…';
+  autoSalaContagem = setInterval(function () {
+    seg--;
+    if (alvo) alvo.textContent = seg > 0 ? ('Indo para a sala de espera em ' + seg + 's…') : 'Abrindo a sala de espera…';
+    if (seg <= 0 && autoSalaContagem) { clearInterval(autoSalaContagem); autoSalaContagem = null; }
+  }, 1000);
+  autoSalaTimer = setTimeout(irParaSala, seg * 1000);
+}
+function aplicarPrefillBusca() {
+  if (!PREFILL_BUSCA) return;
+  var p = PREFILL_BUSCA; PREFILL_BUSCA = null;
+  if (p.nome) set('f-nome', p.nome);
+  if (p.dn) set('f-dn', p.dn);
+  if (v('f-nome') && v('f-dn') && validarDN(v('f-dn').trim())) buscarPaciente();
 }
 
 // ══ UTILITÁRIOS ══
@@ -867,6 +899,10 @@ function mascaraCPF(el) {
 
 // Enter no login
 document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var qp = new URLSearchParams(location.search);
+    if (qp.get('nome') || qp.get('dn')) PREFILL_BUSCA = { nome: qp.get('nome') || '', dn: qp.get('dn') || '' };
+  } catch (e) {}
   document.getElementById('inp-senha').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') fazerLogin();
   });
