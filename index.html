@@ -381,18 +381,37 @@
     </div>
   </div>
 
-  <!-- Dados clínicos (só leitura se veio do pré-atendimento) -->
-  <div class="secao" id="secao-clinica" style="display:none">
+  <!-- Dados clínicos: a secretária preenche OU vêm do pré-atendimento (travados) -->
+  <div class="secao" id="secao-clinica">
     <div class="secao-titulo">
-      <span class="icone">🫁</span> Queixa (pré-atendimento)
+      <span class="icone">🫁</span> Dados clínicos
     </div>
+    <p id="clin-origem" style="color:var(--sub);font-size:.8rem;margin:-4px 0 8px">Preencha se o paciente não fez o pré-atendimento online.</p>
     <div class="campo">
       <label>Queixa principal</label>
-      <textarea id="f-qp" readonly rows="3"></textarea>
+      <textarea id="f-qp" rows="3" placeholder="Motivo da consulta / queixa"></textarea>
+    </div>
+    <div class="campo">
+      <label>Antecedentes / problemas de saúde</label>
+      <textarea id="f-antecedentes" rows="2" placeholder="Ex.: hipertensão, diabetes…"></textarea>
+    </div>
+    <div class="linha-dupla">
+      <div class="campo">
+        <label>Medicações em uso</label>
+        <textarea id="f-medicacoes" rows="2"></textarea>
+      </div>
+      <div class="campo">
+        <label>Alergias</label>
+        <textarea id="f-alergias" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="campo">
+      <label>Tabagismo / exposições</label>
+      <input type="text" id="f-tabagismo" placeholder="Ex.: ex-fumante, 20 anos-maço">
     </div>
     <div class="campo">
       <label>Observações clínicas</label>
-      <textarea id="f-obs-clin" readonly rows="2"></textarea>
+      <textarea id="f-obs-clin" rows="2"></textarea>
     </div>
   </div>
 
@@ -593,24 +612,34 @@ function preencherDados(d) {
   preencherSensivel('f-email', d.email, d.email_mascara);
   preencherSensivel('f-endereco', d.endereco, d.endereco_mascara);
 
-  // Dados clínicos — só leitura
-  if (d.qp) {
+  // Dados clínicos: se vieram do pré-atendimento, preenche e trava (só-leitura)
+  if (d.qp || d.antecedentes || d.medicacoes || d.alergias || d.tabagismo) {
     set('f-qp', d.qp + (d.qs ? '\n' + d.qs : ''));
-    document.getElementById('f-qp').readOnly = true;
-    var obs = [d.antecedentes, d.tabagismo, d.medicacoes].filter(Boolean).join(' · ');
-    set('f-obs-clin', obs);
-    document.getElementById('secao-clinica').style.display = 'block';
+    set('f-antecedentes', [d.antecedentes, d.outros_antec].filter(Boolean).join(' · '));
+    set('f-medicacoes', d.medicacoes || '');
+    set('f-alergias', d.alergias || '');
+    set('f-tabagismo', d.tabagismo || '');
+    travarClinico(true);
+    var oc = document.getElementById('clin-origem');
+    if (oc) oc.textContent = '✓ Vindo do pré-atendimento do paciente (somente leitura).';
   }
 }
 
+function travarClinico(ro) {
+  ['f-qp','f-antecedentes','f-medicacoes','f-alergias','f-tabagismo','f-obs-clin'].forEach(function(id){
+    var e = document.getElementById(id); if (e) e.readOnly = ro;
+  });
+}
 function resetBusca() {
   limparPistas();
   estado.linhaPre = null;
   estado.dadosPre = null;
   document.getElementById('badge-pre').style.display = 'none';
   alertar('alerta-busca', '', '');
-  document.getElementById('secao-clinica').style.display = 'none';
-  set('f-qp', ''); set('f-obs-clin', '');
+  ['f-qp','f-antecedentes','f-medicacoes','f-alergias','f-tabagismo','f-obs-clin'].forEach(function(id){ set(id, ''); });
+  travarClinico(false);
+  var oc = document.getElementById('clin-origem');
+  if (oc) oc.textContent = 'Preencha se o paciente não fez o pré-atendimento online.';
 }
 
 // ══ ENVIAR ══
@@ -642,14 +671,13 @@ function enviarRecepcao() {
     cpf_pagador:   v('f-cpf-pag'),
     observacoes:   v('f-obs'),
     linha_pre:     estado.linhaPre,
-    // Dados clínicos do pré-atendimento para o Doc do paciente
-    qp:            estado.dadosPre ? estado.dadosPre.qp          : '',
-    qs:            estado.dadosPre ? estado.dadosPre.qs           : '',
-    antecedentes:  estado.dadosPre ? estado.dadosPre.antecedentes : '',
-    outros_antec:  estado.dadosPre ? estado.dadosPre.outros_antec : '',
-    tabagismo:     estado.dadosPre ? estado.dadosPre.tabagismo    : '',
-    medicacoes:    estado.dadosPre ? estado.dadosPre.medicacoes   : '',
-    alergias:      estado.dadosPre ? estado.dadosPre.alergias     : '',
+    // Dados clínicos: do formulário (secretária preenche OU herdado do pré-atendimento)
+    qp:            v('f-qp'),
+    qs:            estado.dadosPre ? estado.dadosPre.qs : '',
+    antecedentes:  [v('f-antecedentes'), v('f-obs-clin')].filter(Boolean).join(' · '),
+    tabagismo:     v('f-tabagismo'),
+    medicacoes:    v('f-medicacoes'),
+    alergias:      v('f-alergias'),
     whatsapp:      valorReal('f-telefone'),
   };
 
@@ -690,7 +718,8 @@ function enviarRecepcao() {
 // ══ NOVO ATENDIMENTO ══
 function novoAtendimento() {
   ['f-nome','f-dn','f-cpf','f-rg','f-telefone','f-email','f-endereco','f-cidade',
-   'f-valor','f-cpf-pag','f-obs','f-qp','f-obs-clin'].forEach(id => set(id, ''));
+   'f-valor','f-cpf-pag','f-obs','f-qp','f-antecedentes','f-medicacoes','f-alergias',
+   'f-tabagismo','f-obs-clin'].forEach(id => set(id, ''));
   ['f-clinica','f-pagamento','f-recibo'].forEach(id => {
     var el = document.getElementById(id);
     if (el) el.selectedIndex = 0;
@@ -707,7 +736,7 @@ function novoAtendimento() {
   estado.linhaPre = null;
   estado.dadosPre = null;
   document.getElementById('badge-pre').style.display = 'none';
-  document.getElementById('secao-clinica').style.display = 'none';
+  travarClinico(false);
   limparPistas();
   ['alerta-busca','alerta-envio'].forEach(id => alertar(id, '', ''));
   mostrar('tela-confirmacao', false);
