@@ -407,6 +407,22 @@
         <textarea id="f-qp" rows="3" placeholder="Queixa ou motivo, se vier na ficha"></textarea>
       </div>
       <div class="campo">
+        <label>Antecedentes / problemas de saúde</label>
+        <textarea id="f-antecedentes" rows="2"></textarea>
+      </div>
+      <div class="campo">
+        <label>Medicações em uso</label>
+        <textarea id="f-medicacoes" rows="2"></textarea>
+      </div>
+      <div class="campo">
+        <label>Alergias</label>
+        <textarea id="f-alergias" rows="2"></textarea>
+      </div>
+      <div class="campo">
+        <label>Tabagismo / exposições</label>
+        <input type="text" id="f-tabagismo" placeholder="Ex.: ex-fumante, 20 anos-maço">
+      </div>
+      <div class="campo">
         <label>Observações</label>
         <textarea id="f-obs" rows="3" placeholder="Ajustes manuais, observações da captura, dados incompletos…"></textarea>
       </div>
@@ -592,11 +608,11 @@ function enviarEntrada() {
     linha_pre: '',
     qp: v('f-qp'),
     qs: '',
-    antecedentes: '',
+    antecedentes: v('f-antecedentes'),
     outros_antec: '',
-    tabagismo: '',
-    medicacoes: '',
-    alergias: '',
+    tabagismo: v('f-tabagismo'),
+    medicacoes: v('f-medicacoes'),
+    alergias: v('f-alergias'),
     whatsapp: v('f-telefone')
   };
 
@@ -756,7 +772,7 @@ function limparCaptura() {
 }
 
 function novaCaptura() {
-  ['f-nome','f-dn','f-cpf','f-telefone','f-email','f-endereco','f-cidade','f-valor','f-qp','f-obs','ocr-texto'].forEach(id => set(id, ''));
+  ['f-nome','f-dn','f-cpf','f-telefone','f-email','f-endereco','f-cidade','f-valor','f-qp','f-antecedentes','f-medicacoes','f-alergias','f-tabagismo','f-obs','ocr-texto'].forEach(id => set(id, ''));
   ['f-clinica'].forEach(id => { var el = document.getElementById(id); if (el) el.selectedIndex = 0; });
   document.getElementById('f-pagamento').selectedIndex = 0;
   selecionarClinicaPadrao();
