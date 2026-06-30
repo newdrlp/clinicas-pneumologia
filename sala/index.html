@@ -58,6 +58,13 @@
            border-radius:8px;text-decoration:none}
   .vazio{text-align:center;color:var(--suave);padding:30px 10px}
   .sub{font-size:12px;color:var(--suave);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .online{display:inline-block;background:var(--okbg);color:var(--ok);padding:2px 9px;border-radius:20px;
+          font-size:12px;font-weight:700;margin:2px 4px 2px 0}
+  .online.eu{background:#e0ecf7;color:var(--azul)}
+  #recados{max-height:130px;overflow:auto}
+  .recado{padding:6px 0;border-bottom:1px solid var(--linha);font-size:13px}
+  .recado:last-child{border-bottom:none}
+  .recado .quem{font-weight:700;color:var(--azul)} .recado .quando{color:var(--suave);font-size:11px;margin-left:6px}
 </style>
 </head>
 <body>
@@ -86,6 +93,19 @@
     <a href="#" onclick="sair();return false">Sair</a>
   </header>
   <main>
+    <!-- presença + mural (compartilhado entre todas as logadas) -->
+    <div class="card" style="padding:12px 14px">
+      <div><span class="sub" style="margin:0 8px 0 0">Online agora</span><span id="presenca" class="meta">…</span></div>
+      <div class="sub" style="margin:12px 0 4px">Mural de recados (hoje)</div>
+      <div id="recados"><div class="meta">Sem recados hoje.</div></div>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:3"><input id="f-recado" maxlength="240" autocomplete="off"
+             placeholder="Recado para a equipe… (Enter envia)" onkeydown="if(event.key==='Enter'){event.preventDefault();enviarRecado();}"></div>
+        <div style="flex:1;max-width:130px"><button class="btn-azul" id="btn-recado" onclick="enviarRecado()">Enviar</button></div>
+      </div>
+      <div class="alerta" id="alerta-recado"></div>
+    </div>
+
     <!-- adicionar chegada -->
     <div class="card">
       <div class="row">
@@ -131,7 +151,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
 
 var estado = { usuario:'', nome:'', clinica:'' };
-var pollTimer = null, tickTimer = null;
+var pollTimer = null, tickTimer = null, presencaTimer = null;
 var renderClientMs = 0;       // Date.now() no momento do último render
 var ultimoFetchMs = 0;        // p/ "atualizado há Xs"
 
@@ -193,6 +213,7 @@ function sair(){
   try{ sessionStorage.removeItem('sala_sessao'); }catch(e){}
   if(pollTimer) clearInterval(pollTimer);
   if(tickTimer) clearInterval(tickTimer);
+  if(presencaTimer) clearInterval(presencaTimer);
   location.reload();
 }
 
@@ -223,10 +244,13 @@ function adicionarChegada(){
 // ══ LISTAR + POLLING ══
 function iniciarPolling(){
   carregarLista();
+  enviarPresenca();                 // marca "estou online" já na entrada
   if(pollTimer) clearInterval(pollTimer);
   if(tickTimer) clearInterval(tickTimer);
+  if(presencaTimer) clearInterval(presencaTimer);
   pollTimer = setInterval(carregarLista, 12000);
   tickTimer = setInterval(tick, 1000);
+  presencaTimer = setInterval(enviarPresenca, 45000);   // heartbeat de presença
 }
 function recarregar(){ carregarLista(); }
 
@@ -234,9 +258,59 @@ function carregarLista(){
   fetchJson({acao:'sala_listar', data:val('f-data')||hojeISO()}, 20000)
     .then(function(r){return r.json();})
     .then(function(res){
-      if(res.ok){ renderizar(res.itens||[], res.servidor_em); ultimoFetchMs=Date.now(); }
+      if(res.ok){
+        renderizar(res.itens||[], res.servidor_em);
+        renderPresenca(res.presentes||[]);
+        renderRecados(res.recados||[]);
+        ultimoFetchMs=Date.now();
+      }
     })
     .catch(function(){ /* mantém a lista atual; próximo poll tenta de novo */ });
+}
+
+// ══ PRESENÇA (quem está online) ══
+function enviarPresenca(){
+  if(!estado.usuario) return;
+  fetchJson({acao:'sala_presenca', usuario:estado.usuario, nome:estado.nome}, 15000)
+    .then(function(r){return r.json();})
+    .then(function(res){ if(res.ok && res.presentes) renderPresenca(res.presentes); })
+    .catch(function(){ /* silencioso: próximo heartbeat tenta de novo */ });
+}
+function renderPresenca(arr){
+  var el=$('presenca'); if(!el) return;
+  if(!arr.length){ el.innerHTML='<span class="meta">—</span>'; return; }
+  var meu=String(estado.usuario||'').toLowerCase();
+  el.innerHTML = arr.map(function(p){
+    var eu = String(p.usuario||'').toLowerCase()===meu;
+    return '<span class="online'+(eu?' eu':'')+'">🟢 '+escapar(p.nome||p.usuario)+(eu?' (você)':'')+'</span>';
+  }).join('');
+}
+
+// ══ MURAL DE RECADOS ══
+function enviarRecado(){
+  var t=val('f-recado').trim();
+  if(!t){ return; }
+  btn('btn-recado',true);
+  fetchJson({acao:'sala_recado', autor:estado.nome||estado.usuario, texto:t}, 15000)
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.ok){ $('f-recado').value=''; renderRecados(res.recados||[]); alerta('alerta-recado','',''); }
+      else { alerta('alerta-recado','erro',res.erro||'Não foi possível enviar.'); }
+    })
+    .catch(function(){ alerta('alerta-recado','erro','Falha de conexão.'); })
+    .finally(function(){ btn('btn-recado',false); });
+}
+function renderRecados(arr){
+  var el=$('recados'); if(!el) return;
+  if(!arr.length){ el.innerHTML='<div class="meta">Sem recados hoje.</div>'; return; }
+  el.innerHTML = arr.map(function(r){
+    return '<div class="recado"><span class="quem">'+escapar(r.autor||'')+'</span>'+
+           '<span class="quando">'+horaCurta(r.em)+'</span><br>'+escapar(r.texto||'')+'</div>';
+  }).join('');
+}
+function horaCurta(iso){
+  var m=String(iso||'').match(/T(\d{2}:\d{2})/);
+  return m ? m[1] : '';
 }
 
 var TIER = { super_idoso:'super', super_prioridade:'super', idoso:'prio', prioridade:'prio', normal:'normal' };
