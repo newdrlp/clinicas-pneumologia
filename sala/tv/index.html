@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel de chamada — Pneumologia PE</title>
+<style>
+  :root{--azul:#1a3a5c;--azul2:#24476b;--bg:#0f2236;--card:#16314a;--linha:#2b405e;
+        --txt:#eaf1f8;--suave:#9fb4ca;--ok:#3fd08a;--super:#ff7a6e;--prio:#ffce6b;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#0f2236;color:#eaf1f8}
+  .topo{display:flex;align-items:center;gap:14px;padding:18px 28px;background:#0b1c2e;border-bottom:1px solid #21405e}
+  .topo h1{font-size:26px;margin:0;font-weight:700;flex:1}
+  .relogio{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;color:#cfe0f0}
+  .hero{padding:34px 28px;text-align:center}
+  .hero .rot{font-size:24px;color:#9fb4ca;letter-spacing:.5px;text-transform:uppercase}
+  .hero .nome{font-size:84px;font-weight:800;line-height:1.05;margin:8px 0}
+  .hero.ativo{background:#16314a}
+  .hero .clin{font-size:24px;color:#cfe0f0}
+  .secao{padding:8px 28px 28px}
+  .secao h2{font-size:22px;color:#9fb4ca;font-weight:600;margin:18px 0 12px;text-transform:uppercase;letter-spacing:.5px}
+  .prox{display:flex;align-items:center;gap:18px;background:#16314a;border-radius:14px;padding:16px 22px;margin-bottom:12px;border-left:8px solid #3a5f86}
+  .prox.super{border-left-color:#ff7a6e} .prox.prio{border-left-color:#ffce6b}
+  .prox .p{font-size:40px;font-weight:800;color:#7fa6cf;min-width:50px}
+  .prox .n{font-size:40px;font-weight:700;flex:1}
+  .prox .tag{font-size:18px;font-weight:700;padding:4px 14px;border-radius:20px}
+  .tag.super{background:#43201d;color:#ff9d93} .tag.prio{background:#403213;color:#ffd884}
+  .vazio{font-size:30px;color:#7d93aa;text-align:center;padding:40px}
+  .ematend{font-size:22px;color:#9fb4ca;text-align:center;padding:0 28px 8px}
+  .ematend b{color:#cfe0f0}
+  .overlay{position:fixed;inset:0;background:#0b1c2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:50}
+  .overlay button{font-size:24px;font-weight:700;padding:18px 36px;border:none;border-radius:14px;background:#2e86c1;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="topo">
+  <span style="font-size:30px">🔊</span>
+  <h1>Pneumologia PE — Chamada</h1>
+  <span class="relogio" id="relogio">--:--</span>
+</div>
+
+<div class="hero" id="hero">
+  <div class="rot">Aguardando chamada</div>
+  <div class="nome" id="hero-nome">—</div>
+  <div class="clin" id="hero-sub"></div>
+</div>
+<div class="ematend" id="ematend"></div>
+
+<div class="secao">
+  <h2>Próximos na fila</h2>
+  <div id="prox"><div class="vazio">Carregando…</div></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div style="font-size:30px;font-weight:700">Painel de chamada</div>
+  <div style="font-size:20px;color:#9fb4ca;max-width:520px;text-align:center;padding:0 20px">
+    Toque para iniciar em tela cheia e ativar o som de chamada.</div>
+  <button onclick="iniciarTV()">▶ Iniciar painel</button>
+</div>
+
+<script>
+var ENDPOINT='https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
+var somOn=false, audioCtx=null, chamadosAntes={}, primeiraCarga=true;
+
+function $(id){return document.getElementById(id);}
+function escapar(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function nomeTV(nome){
+  var p=String(nome||'').trim().split(/\s+/);
+  if(!p[0]) return '';
+  if(p.length===1) return p[0];
+  return p[0]+' '+p[p.length-1].charAt(0).toUpperCase()+'.';
+}
+function fetchJson(payload,ms){
+  var ctrl=window.AbortController?new AbortController():null,tId;
+  var timeout=new Promise(function(_,rej){tId=setTimeout(function(){if(ctrl)ctrl.abort();var e=new Error('t');e.name='TimeoutError';rej(e);},ms||18000);});
+  var op={method:'POST',body:JSON.stringify(payload)}; if(ctrl)op.signal=ctrl.signal;
+  var req=fetch(ENDPOINT,op).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r;});
+  return Promise.race([req,timeout]).finally(function(){clearTimeout(tId);});
+}
+function gongo(){
+  if(!somOn)return;
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    [880,660].forEach(function(f,i){
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.connect(g);g.connect(audioCtx.destination);o.type='sine';o.frequency.value=f;
+      var t=audioCtx.currentTime+i*0.28;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.3,t+0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+      o.start(t);o.stop(t+0.57);
+    });
+  }catch(e){}
+}
+function iniciarTV(){
+  somOn=true;
+  try{ if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); }catch(e){}
+  try{ (document.documentElement.requestFullscreen||function(){})(); }catch(e){}
+  $('overlay').style.display='none';
+  gongo();
+}
+function relogio(){
+  var d=new Date(); $('relogio').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+}
+function carregar(){
+  var hoje=(function(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);})();
+  fetchJson({acao:'sala_listar',data:hoje},20000)
+    .then(function(r){return r.json();})
+    .then(function(res){ if(res.ok) render(res.itens||[]); })
+    .catch(function(){});
+}
+function render(itens){
+  var chamados=itens.filter(function(it){return it.status==='chamado';});
+  var ematend=itens.filter(function(it){return it.status==='em_atendimento';});
+  var aguard =itens.filter(function(it){return it.status==='aguardando';});
+
+  var agoraSet={}; chamados.forEach(function(it){agoraSet[it.chave]=1;});
+  var novo=chamados.some(function(it){return !chamadosAntes[it.chave];});
+  if(novo && !primeiraCarga) gongo();
+  chamadosAntes=agoraSet; primeiraCarga=false;
+
+  var hero=$('hero');
+  if(chamados.length){
+    hero.className='hero ativo';
+    $('hero').querySelector('.rot').textContent = chamados.length>1?'Chamando':'Chamando agora';
+    $('hero-nome').textContent = chamados.map(function(it){return nomeTV(it.nome);}).join('  ·  ');
+    $('hero-sub').textContent = chamados.length===1 ? (chamados[0].clinica||'') : '';
+  } else {
+    hero.className='hero';
+    $('hero').querySelector('.rot').textContent='Aguardando chamada';
+    $('hero-nome').textContent='—';
+    $('hero-sub').textContent='';
+  }
+
+  $('ematend').innerHTML = ematend.length
+    ? ('Em atendimento: '+ematend.map(function(it){return '<b>'+escapar(nomeTV(it.nome))+'</b>';}).join(', '))
+    : '';
+
+  var box=$('prox');
+  if(!aguard.length){ box.innerHTML='<div class="vazio">Ninguém aguardando no momento.</div>'; return; }
+  box.innerHTML = aguard.slice(0,6).map(function(it){
+    var tier = (it.prioridade==='super_idoso'||it.prioridade==='super_prioridade')?'super'
+             : (it.prioridade==='idoso'||it.prioridade==='prioridade')?'prio':'';
+    var tag = it.prioridade==='super_idoso'?'<span class="tag super">Preferência 80+</span>'
+            : it.prioridade==='super_prioridade'?'<span class="tag super">Super-prioridade</span>'
+            : it.prioridade==='idoso'?'<span class="tag prio">Idoso</span>'
+            : (it.prioridade && it.prioridade!=='normal')?'<span class="tag prio">Prioridade</span>':'';
+    return '<div class="prox '+tier+'"><span class="p">'+(it.posicao||'')+'º</span>'+
+           '<span class="n">'+escapar(nomeTV(it.nome))+'</span>'+tag+'</div>';
+  }).join('');
+}
+relogio(); setInterval(relogio,1000);
+carregar(); setInterval(carregar,12000);
+</script>
+</body>
+</html>
