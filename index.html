@@ -685,7 +685,7 @@ function enviarRecepcao() {
   btn('btn-enviar', true);
   alertar('alerta-envio', '', '');
 
-  fetchJsonComTimeout(payload, 30000)
+  fetchJsonComTimeout(payload, 60000)
   .then(r => r.json())
   .then(res => {
     if (res.ok) {
