@@ -181,6 +181,7 @@ var ultimoFetchMs = 0;        // p/ "atualizado há Xs"
 var ultimaLista = [];         // últimos itens renderizados (p/ calcular ordem ao arrastar)
 var arrasto = { chave:null }; // estado do arrastar
 var dndAtivo = false;         // listeners de drag-and-drop instalados?
+var audioBoard = null, chamadosBoard = {}, boardPrimeira = true;   // som de chamada no board
 
 // ══ FETCH (mesmo padrão da recepção: POST simples, lê JSON) ══
 function fetchJson(payload, tempoMs){
@@ -289,6 +290,7 @@ function carregarLista(){
         renderizar(res.itens||[], res.servidor_em);
         renderPresenca(res.presentes||[]);
         renderRecados(res.recados||[]);
+        detectarChamada(res.itens||[]);
         ultimoFetchMs=Date.now();
       }
     })
@@ -433,6 +435,30 @@ function fmtDur(ms){
   return m+':'+('0'+s).slice(-2);
 }
 
+// ══ SOM DE CHAMADA (no próprio board) ══
+function unlockAudio(){  // qualquer clique da secretária libera o áudio do navegador
+  try{ if(!audioBoard) audioBoard=new (window.AudioContext||window.webkitAudioContext)(); audioBoard.resume(); }catch(e){}
+}
+function gongo(){
+  if(!audioBoard) return;
+  try{
+    [880,660].forEach(function(f,i){
+      var o=audioBoard.createOscillator(),g=audioBoard.createGain();
+      o.connect(g);g.connect(audioBoard.destination);o.type='sine';o.frequency.value=f;
+      var t=audioBoard.currentTime+i*0.26;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.3,t+0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+      o.start(t);o.stop(t+0.52);
+    });
+  }catch(e){}
+}
+function detectarChamada(itens){  // apita quando aparece um NOVO 'chamado' (clique dela ou de outro PC)
+  var agora={}, novo=false;
+  itens.forEach(function(it){ if(it.status==='chamado'){ agora[it.chave]=1; if(!chamadosBoard[it.chave]) novo=true; } });
+  if(novo && !boardPrimeira) gongo();
+  chamadosBoard=agora; boardPrimeira=false;
+}
+
 // ══ MUDAR STATUS ══
 function mudar(chave, status){
   fetchJson({acao:'sala_status', chave:chave, data:val('f-data')||hojeISO(), status:status}, 18000)
@@ -521,6 +547,7 @@ function soltarOrdenar(chave, alvoChave, depois){
 // ══ INÍCIO ══
 (function(){
   listaDnD();
+  document.addEventListener('click', unlockAudio);   // 1º clique libera o som de chamada
   try{ var s=sessionStorage.getItem('sala_sessao'); if(s){ aplicarSessao(JSON.parse(s)); } }catch(e){}
 })();
 </script>
