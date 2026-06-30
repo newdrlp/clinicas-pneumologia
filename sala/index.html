@@ -401,7 +401,7 @@ function cartao(it, servidorMs){
   }
 
   return '<div class="item '+tier+(fim?' fim':'')+(arrast?' drag':'')+'"'+dragAttrs+'>'+
-    '<div class="top">'+grip+pos+
+    '<div class="top">'+grip+pos+(it.senha?'<span class="senha">'+escapar(it.senha)+'</span>':'')+
       '<span class="nome">'+escapar(it.nome)+'</span>'+
       (idade?'<span class="meta">'+idade+'</span>':'')+
       prioTag+
