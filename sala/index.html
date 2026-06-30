@@ -65,6 +65,11 @@
   .recado{padding:6px 0;border-bottom:1px solid var(--linha);font-size:13px}
   .recado:last-child{border-bottom:none}
   .recado .quem{font-weight:700;color:var(--azul)} .recado .quando{color:var(--suave);font-size:11px;margin-left:6px}
+  .item.drag{cursor:grab}
+  .item.arrastando{opacity:.45}
+  .item.drop-antes{box-shadow:inset 0 3px 0 0 var(--azul)}
+  .item.drop-depois{box-shadow:inset 0 -3px 0 0 var(--azul)}
+  .grip{color:#9aa7b4;font-size:17px;cursor:grab;margin-right:4px;user-select:none}
 </style>
 </head>
 <body>
@@ -154,6 +159,9 @@ var estado = { usuario:'', nome:'', clinica:'' };
 var pollTimer = null, tickTimer = null, presencaTimer = null;
 var renderClientMs = 0;       // Date.now() no momento do último render
 var ultimoFetchMs = 0;        // p/ "atualizado há Xs"
+var ultimaLista = [];         // últimos itens renderizados (p/ calcular ordem ao arrastar)
+var arrasto = { chave:null }; // estado do arrastar
+var dndAtivo = false;         // listeners de drag-and-drop instalados?
 
 // ══ FETCH (mesmo padrão da recepção: POST simples, lê JSON) ══
 function fetchJson(payload, tempoMs){
@@ -319,6 +327,7 @@ var PRIO_LABEL = { super_idoso:'Super-idoso ≥80', super_prioridade:'Super-prio
 
 function renderizar(itens, servidorIso){
   renderClientMs = Date.now();
+  ultimaLista = itens || [];
   var servidorMs = Date.parse(servidorIso) || renderClientMs;
   var lista=$('lista');
   if(!itens.length){ lista.innerHTML='<div class="vazio">Ninguém na sala para esta data.</div>'; return; }
@@ -348,6 +357,9 @@ function cartao(it, servidorMs){
     if(it.concluido_em && it.chegada){ var t=Date.parse(it.concluido_em)-Date.parse(it.chegada); tempoEstatico = it.status==='concluido'? ('total '+fmtDur(t)) : ''; }
     baseMs='';
   }
+  var arrast = (it.status==='aguardando');     // só a fila de espera é reordenável
+  var dragAttrs = arrast ? ' draggable="true" data-chave="'+escapar(it.chave)+'" data-ordem="'+(it.ordem||0)+'"' : '';
+  var grip = arrast ? '<span class="grip" title="Arraste para reordenar">⠿</span>' : '';
   var pos = it.status==='aguardando' && it.posicao ? '<span class="pos">'+it.posicao+'</span>' : '<span class="pos"></span>';
   var prioTag = PRIO_LABEL[it.prioridade] ? '<span class="tag '+(tier==='super'?'super':'prio')+'">'+PRIO_LABEL[it.prioridade]+'</span>' : '';
   var idade = (it.idade!==''&&it.idade!=null) ? it.idade+'a' : '';
@@ -368,8 +380,8 @@ function cartao(it, servidorMs){
     acoes='<div class="acoes"><button onclick="mudar(\''+enc(it.chave)+'\',\'aguardando\')">↩ Reabrir</button></div>';
   }
 
-  return '<div class="item '+tier+(fim?' fim':'')+'">'+
-    '<div class="top">'+pos+
+  return '<div class="item '+tier+(fim?' fim':'')+(arrast?' drag':'')+'"'+dragAttrs+'>'+
+    '<div class="top">'+grip+pos+
       '<span class="nome">'+escapar(it.nome)+'</span>'+
       (idade?'<span class="meta">'+idade+'</span>':'')+
       prioTag+
@@ -409,8 +421,66 @@ function mudar(chave, status){
     .catch(function(){ alert('Falha de conexão.'); });
 }
 
+// ══ ARRASTAR (reordenação manual da fila de espera) ══
+function limparMarcadores(){
+  document.querySelectorAll('.drop-antes,.drop-depois').forEach(function(el){ el.classList.remove('drop-antes','drop-depois'); });
+}
+function listaDnD(){
+  if(dndAtivo) return; dndAtivo=true;
+  var lista=$('lista'); if(!lista) return;
+  lista.addEventListener('dragstart', function(e){
+    var card=e.target.closest? e.target.closest('.item[draggable="true"]') : null;
+    if(!card) return;
+    arrasto.chave = card.getAttribute('data-chave');
+    card.classList.add('arrastando');
+    try{ e.dataTransfer.setData('text/plain', arrasto.chave); e.dataTransfer.effectAllowed='move'; }catch(_){}
+  });
+  lista.addEventListener('dragend', function(e){
+    document.querySelectorAll('.item.arrastando').forEach(function(el){ el.classList.remove('arrastando'); });
+    limparMarcadores();
+  });
+  lista.addEventListener('dragover', function(e){
+    var card=e.target.closest? e.target.closest('.item[draggable="true"]') : null;
+    if(!card || !arrasto.chave) return;
+    e.preventDefault();
+    var r=card.getBoundingClientRect();
+    var depois=(e.clientY - r.top) > r.height/2;
+    limparMarcadores();
+    card.classList.add(depois?'drop-depois':'drop-antes');
+  });
+  lista.addEventListener('drop', function(e){
+    var card=e.target.closest? e.target.closest('.item[draggable="true"]') : null;
+    if(!card || !arrasto.chave){ limparMarcadores(); return; }
+    e.preventDefault();
+    var r=card.getBoundingClientRect();
+    var depois=(e.clientY - r.top) > r.height/2;
+    soltarOrdenar(arrasto.chave, card.getAttribute('data-chave'), depois);
+    arrasto.chave=null; limparMarcadores();
+  });
+}
+function soltarOrdenar(chave, alvoChave, depois){
+  if(!chave || chave===alvoChave) return;
+  var aguard = (ultimaLista||[]).filter(function(it){ return it.status==='aguardando'; });
+  var semEu  = aguard.filter(function(it){ return it.chave!==chave; });
+  var idxAlvo=-1;
+  for(var i=0;i<semEu.length;i++){ if(semEu[i].chave===alvoChave){ idxAlvo=i; break; } }
+  if(idxAlvo<0) return;
+  var insIdx = depois ? idxAlvo+1 : idxAlvo;
+  var prev = semEu[insIdx-1], next = semEu[insIdx];
+  var novaOrdem;
+  if(prev && next)      novaOrdem = (Number(prev.ordem)+Number(next.ordem))/2;
+  else if(next)         novaOrdem = Number(next.ordem) - 1e6;
+  else if(prev)         novaOrdem = Number(prev.ordem) + 1e6;
+  else                  return;
+  fetchJson({acao:'sala_ordenar', chave:chave, data:val('f-data')||hojeISO(), ordem:novaOrdem}, 15000)
+    .then(function(r){return r.json();})
+    .then(function(){ carregarLista(); })
+    .catch(function(){ carregarLista(); });
+}
+
 // ══ INÍCIO ══
 (function(){
+  listaDnD();
   try{ var s=sessionStorage.getItem('sala_sessao'); if(s){ aplicarSessao(JSON.parse(s)); } }catch(e){}
 })();
 </script>
