@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Acompanhe sua vez — Pneumologia PE</title>
+<style>
+  :root{--azul:#1a3a5c;--bg:#eef2f6;--card:#fff;--linha:#dbe3ec;--txt:#1f2d3d;--suave:#5b6b7b;
+        --ok:#1f7a4d;--okbg:#e7f5ee;--aviso:#9a6a0f;--avisobg:#fdf4e3;--erro:#b3261e;--errobg:#fbe9e7;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:var(--azul);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .sub{font-size:12px;color:#cfe0f0}
+  main{max-width:440px;margin:0 auto;padding:16px}
+  .hidden{display:none!important}
+  .card{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:18px;margin-bottom:12px;text-align:center}
+  .rotulo{font-size:13px;color:var(--suave)}
+  .pos{font-size:54px;font-weight:800;line-height:1.05;color:var(--azul);margin:2px 0}
+  .grid{display:flex;gap:10px;margin-bottom:12px}
+  .mini{flex:1;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px;text-align:center}
+  .mini .v{font-size:20px;font-weight:700;margin-top:2px}
+  .status{display:inline-block;background:#e8eef5;color:var(--azul);padding:4px 12px;border-radius:20px;font-weight:700;font-size:14px}
+  .vez{font-size:24px;font-weight:800;color:var(--ok)}
+  .banner{border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px;line-height:1.5}
+  .banner.prio{background:var(--avisobg);color:var(--aviso)}
+  .banner.subiu{background:var(--okbg);color:var(--ok)}
+  .banner.erro{background:var(--errobg);color:var(--erro)}
+  .btn-som{width:100%;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;background:var(--azul);color:#fff;cursor:pointer}
+  .btn-som:disabled{background:var(--okbg);color:var(--ok);cursor:default}
+  .rodape{font-size:12px;color:var(--suave);text-align:center;margin-top:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:20px">🪑</span>
+  <div><h1>Acompanhe sua vez</h1><div class="sub">Pneumologia PE</div></div>
+</header>
+<main>
+  <div id="banner" class="banner hidden"></div>
+  <div id="conteudo"><div class="card"><div class="rotulo">Carregando…</div></div></div>
+  <button id="btn-som" class="btn-som" onclick="ativarAvisos()">🔔 Ativar avisos sonoros</button>
+  <p class="rodape">Atualiza sozinho a cada 15s. Mantenha esta tela aberta para ouvir os avisos.<br>Esta tela mostra apenas a sua posição.</p>
+</main>
+<script>
+var ENDPOINT='https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
+var token=(new URLSearchParams(location.search)).get('t')||'';
+var lastAFrente=null, somOn=false, audioCtx=null, pollT=null;
+
+function $(id){return document.getElementById(id);}
+function escapar(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function fetchJson(payload,ms){
+  var ctrl=window.AbortController?new AbortController():null,tId;
+  var timeout=new Promise(function(_,rej){tId=setTimeout(function(){if(ctrl)ctrl.abort();var e=new Error('t');e.name='TimeoutError';rej(e);},ms||18000);});
+  var op={method:'POST',body:JSON.stringify(payload)}; if(ctrl)op.signal=ctrl.signal;
+  var req=fetch(ENDPOINT,op).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r;});
+  return Promise.race([req,timeout]).finally(function(){clearTimeout(tId);});
+}
+
+function beep(tipo){
+  if(!somOn)return;
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.type='sine'; o.frequency.value = (tipo==='alerta')?392:784;
+    var t=audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.25,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+    o.start(t); o.stop(t+0.57);
+  }catch(e){}
+}
+
+function ativarAvisos(){
+  somOn=true;
+  try{ if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); }catch(e){}
+  var b=$('btn-som'); b.textContent='🔔 Avisos ativados'; b.disabled=true;
+  beep('subiu');
+}
+
+function banner(tipo,msg){
+  var b=$('banner');
+  if(!msg){ b.className='banner hidden'; return; }
+  b.className='banner '+tipo; b.textContent=msg;
+}
+
+function carregar(){
+  if(!token){ render({ok:false,erro:'Link sem identificação. Peça um novo QR na recepção.'}); return; }
+  fetchJson({acao:'sala_minha_vez',token:token},18000)
+    .then(function(r){return r.json();})
+    .then(render)
+    .catch(function(){ /* mantém a tela; tenta no próximo ciclo */ });
+}
+
+function render(res){
+  var c=$('conteudo');
+  if(!res.ok){
+    banner('erro', res.erro||'Não encontramos seu cadastro de hoje.');
+    c.innerHTML='<div class="card"><div class="rotulo">Procure a recepção para gerar um novo acompanhamento.</div></div>';
+    lastAFrente=null; return;
+  }
+  var atendido=(res.status==='chamado'||res.status==='em_atendimento');
+  var concl=(res.status==='concluido'||res.status==='faltou');
+
+  if(lastAFrente!==null && !atendido && !concl){
+    if(res.a_frente < lastAFrente){ beep('subiu'); banner('subiu','Você subiu na fila!'); }
+    else if(res.a_frente > lastAFrente){ beep('alerta'); banner('prio','Um paciente com prioridade especial entrou à sua frente, conforme a lei.'); }
+  }
+  if(atendido){ beep('subiu'); banner('subiu','Chegou a sua vez — dirija-se ao atendimento.'); }
+  lastAFrente = (atendido||concl) ? null : res.a_frente;
+
+  if(atendido){
+    c.innerHTML='<div class="card"><div class="rotulo">'+escapar(res.nome||'')+'</div><div class="vez">É a sua vez 🎉</div>'+
+      '<div style="margin-top:8px"><span class="status">'+(res.status==='em_atendimento'?'Em atendimento':'Chamado')+'</span></div></div>';
+    return;
+  }
+  if(concl){
+    c.innerHTML='<div class="card"><div class="rotulo">'+escapar(res.nome||'')+'</div><div class="vez" style="color:var(--suave)">Atendimento encerrado</div></div>';
+    return;
+  }
+  var prox=(res.a_frente===0);
+  var etaTxt = prox ? 'Você é o próximo' : ('~'+res.eta_min+' min');
+  c.innerHTML=
+    '<div class="card">'+
+      '<div class="rotulo">Sua posição'+(res.nome?(' · '+escapar(res.nome)):'')+'</div>'+
+      '<div class="pos">'+(res.posicao||'-')+'º</div>'+
+      '<div class="rotulo">'+(prox?'você é o próximo a ser chamado':(res.a_frente+' à sua frente'))+'</div>'+
+    '</div>'+
+    '<div class="grid">'+
+      '<div class="mini"><div class="rotulo">Espera estimada</div><div class="v">'+escapar(etaTxt)+'</div></div>'+
+      '<div class="mini"><div class="rotulo">Status</div><div class="v" style="font-size:15px">Aguardando</div></div>'+
+    '</div>'+
+    (res.eta_min>0?'<p class="rodape" style="margin-top:0">Estimativa baseada no ritmo recente de atendimento. Pode variar.</p>':'');
+}
+
+(function(){
+  carregar();
+  pollT=setInterval(carregar,15000);
+})();
+</script>
+</body>
+</html>

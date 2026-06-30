@@ -70,6 +70,9 @@
   .item.drop-antes{box-shadow:inset 0 3px 0 0 var(--azul)}
   .item.drop-depois{box-shadow:inset 0 -3px 0 0 var(--azul)}
   .grip{color:#9aa7b4;font-size:17px;cursor:grab;margin-right:4px;user-select:none}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal.hidden{display:none}
+  .modal-box{background:#fff;border-radius:14px;padding:18px;max-width:340px;width:100%}
 </style>
 </head>
 <body>
@@ -151,6 +154,21 @@
   </main>
 </div>
 
+<!-- modal: QR do paciente (acompanhar pelo celular) -->
+<div id="qr-modal" class="modal hidden">
+  <div class="modal-box">
+    <p id="qr-titulo" style="font-weight:700;margin:0 0 2px;color:var(--azul)">Acompanhar pelo celular</p>
+    <p class="meta" style="margin:0 0 12px">Peça ao paciente para apontar a câmera para o QR.</p>
+    <div id="qr-canvas" style="display:flex;justify-content:center;min-height:220px"></div>
+    <div id="qr-link" style="word-break:break-all;margin:10px 0;font-size:11px;color:var(--suave)"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="copiarLink()" style="flex:1;background:#eef2f6;color:var(--azul)">Copiar link</button>
+      <button class="btn-azul" style="flex:1" onclick="fecharQR()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/qrcode.min.js"></script>
 <script>
 // ══ CONFIG ══ (mesmo endpoint da recepção — ações sala_* após o deploy)
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
@@ -374,6 +392,7 @@ function cartao(it, servidorMs){
     if(it.status==='chamado'||it.status==='aguardando') acoes+='<button class="go" onclick="mudar(\''+enc(it.chave)+'\',\'em_atendimento\')">Em atendimento</button>';
     acoes+='<button class="go" onclick="mudar(\''+enc(it.chave)+'\',\'concluido\')">Concluir</button>';
     acoes+='<button class="warn" onclick="mudar(\''+enc(it.chave)+'\',\'faltou\')">Faltou</button>';
+    acoes+='<button onclick="abrirQR(\''+enc(it.chave)+'\',\''+enc(it.nome)+'\')" title="Gerar QR p/ o paciente acompanhar no celular">QR</button>';
     acoes+='<a href="../?nome='+encodeURIComponent(it.nome)+'&dn='+encodeURIComponent(it.dn)+'">Editar ficha</a>';
     acoes+='</div>';
   } else {
@@ -420,6 +439,26 @@ function mudar(chave, status){
     .then(function(res){ if(res.ok) carregarLista(); else alert(res.erro||'Erro ao atualizar.'); })
     .catch(function(){ alert('Falha de conexão.'); });
 }
+
+// ══ QR DO PACIENTE (gerado pela secretária) ══
+function abrirQR(chave, nome){
+  fetchJson({acao:'sala_token', chave:chave, data:val('f-data')||hojeISO()}, 15000)
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(!res.ok || !res.token){ alert(res.erro||'Não foi possível gerar o QR.'); return; }
+      var url = new URL('fila/', location.href).href + '?t=' + encodeURIComponent(res.token);
+      window._qrUrl = url;
+      $('qr-titulo').textContent = 'Acompanhar: ' + nome;
+      var box=$('qr-canvas'); box.innerHTML='';
+      try{ new QRCode(box, {text:url, width:220, height:220, correctLevel: QRCode.CorrectLevel.M}); }
+      catch(e){ box.textContent='(QR indisponível neste navegador)'; }
+      $('qr-link').textContent = url;
+      $('qr-modal').classList.remove('hidden');
+    })
+    .catch(function(){ alert('Falha de conexão ao gerar o QR.'); });
+}
+function fecharQR(){ $('qr-modal').classList.add('hidden'); }
+function copiarLink(){ try{ navigator.clipboard.writeText(window._qrUrl||''); }catch(e){} }
 
 // ══ ARRASTAR (reordenação manual da fila de espera) ══
 function limparMarcadores(){
