@@ -113,7 +113,7 @@ function render(res){
   lastAFrente = (atendido||concl) ? null : res.a_frente;
 
   if(atendido){
-    c.innerHTML='<div class="card"><div class="rotulo">'+escapar(res.nome||'')+'</div><div class="vez">É a sua vez 🎉</div>'+
+    c.innerHTML='<div class="card"><div class="rotulo">'+(res.senha?'Senha '+escapar(res.senha)+' · ':'')+escapar(res.nome||'')+'</div><div class="vez">É a sua vez 🎉</div>'+
       '<div style="margin-top:8px"><span class="status">'+(res.status==='em_atendimento'?'Em atendimento':'Chamado')+'</span></div></div>';
     return;
   }
@@ -125,9 +125,12 @@ function render(res){
   var etaTxt = prox ? 'Você é o próximo' : ('~'+res.eta_min+' min');
   c.innerHTML=
     '<div class="card">'+
-      '<div class="rotulo">Sua posição'+(res.nome?(' · '+escapar(res.nome)):'')+'</div>'+
-      '<div class="pos">'+(res.posicao||'-')+'º</div>'+
-      '<div class="rotulo">'+(prox?'você é o próximo a ser chamado':(res.a_frente+' à sua frente'))+'</div>'+
+      (res.senha
+        ? '<div class="rotulo">Sua senha</div><div class="pos">'+escapar(res.senha)+'</div>'+
+          '<div class="rotulo">Posição '+(res.posicao||'-')+'º'+(prox?' · você é o próximo':' · '+res.a_frente+' à sua frente')+'</div>'
+        : '<div class="rotulo">Sua posição'+(res.nome?(' · '+escapar(res.nome)):'')+'</div>'+
+          '<div class="pos">'+(res.posicao||'-')+'º</div>'+
+          '<div class="rotulo">'+(prox?'você é o próximo a ser chamado':(res.a_frente+' à sua frente'))+'</div>')+
     '</div>'+
     '<div class="grid">'+
       '<div class="mini"><div class="rotulo">Espera estimada</div><div class="v">'+escapar(etaTxt)+'</div></div>'+

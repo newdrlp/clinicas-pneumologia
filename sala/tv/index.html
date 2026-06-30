@@ -124,7 +124,7 @@ function render(itens){
   if(chamados.length){
     hero.className='hero ativo';
     $('hero').querySelector('.rot').textContent = chamados.length>1?'Chamando':'Chamando agora';
-    $('hero-nome').textContent = chamados.map(function(it){return nomeTV(it.nome);}).join('  ·  ');
+    $('hero-nome').textContent = chamados.map(function(it){return it.senha||'—';}).join('  ·  ');
     $('hero-sub').textContent = chamados.length===1 ? (chamados[0].clinica||'') : '';
   } else {
     hero.className='hero';
@@ -134,7 +134,7 @@ function render(itens){
   }
 
   $('ematend').innerHTML = ematend.length
-    ? ('Em atendimento: '+ematend.map(function(it){return '<b>'+escapar(nomeTV(it.nome))+'</b>';}).join(', '))
+    ? ('Em atendimento: '+ematend.map(function(it){return '<b>'+escapar(it.senha||'—')+'</b>';}).join(', '))
     : '';
 
   var box=$('prox');
@@ -147,7 +147,7 @@ function render(itens){
             : it.prioridade==='idoso'?'<span class="tag prio">Idoso</span>'
             : (it.prioridade && it.prioridade!=='normal')?'<span class="tag prio">Prioridade</span>':'';
     return '<div class="prox '+tier+'"><span class="p">'+(it.posicao||'')+'º</span>'+
-           '<span class="n">'+escapar(nomeTV(it.nome))+'</span>'+tag+'</div>';
+           '<span class="n">'+escapar(it.senha||'—')+'</span>'+tag+'</div>';
   }).join('');
 }
 relogio(); setInterval(relogio,1000);
