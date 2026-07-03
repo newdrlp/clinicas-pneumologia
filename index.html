@@ -297,6 +297,23 @@
 <!-- ══ TELA 2: FORMULÁRIO ══ -->
 <div id="tela-form" class="hidden">
 
+  <!-- Colar dados → distribuir nos campos (parser 100% local, nada sai do navegador) -->
+  <div class="secao" style="border:2px dashed #2980b9;background:#f8fbfd">
+    <div class="secao-titulo">
+      <span class="icone">📋</span> Colar dados do paciente (preenchimento automático)
+    </div>
+    <div class="campo">
+      <textarea id="f-colar" rows="4"
+        placeholder="Cole aqui um bloco de dados (do WhatsApp, e-mail, ficha antiga…). Ex.:&#10;Nome: Maria Exemplo da Silva  DN 12/03/1946&#10;CPF 000.000.000-00 · Tel (81) 99999-9999&#10;Endereço: Rua X, 100 – Caruaru · Pix R$ 350"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primario" type="button" onclick="distribuirColado()">⤵ Distribuir nos campos</button>
+      <button class="btn btn-secundario" type="button"
+              onclick="document.getElementById('f-colar').value='';document.getElementById('colar-resumo').textContent='';">Limpar</button>
+    </div>
+    <small class="hint" id="colar-resumo" style="display:block;margin-top:6px"></small>
+  </div>
+
   <!-- Busca paciente -->
   <div class="secao">
     <div class="secao-titulo">
@@ -912,6 +929,150 @@ function limparPistas() {
 function validarDN(s) {
   return /^\d{2}\/\d{2}\/(\d{4}|\d{2})$/.test(s);
 }
+// ══ COLAR DADOS → DISTRIBUIR NOS CAMPOS ══════════════════════════
+// Parser 100% LOCAL (nada sai do navegador). Portado do "Redistribuir nos
+// campos" do prontuário desktop: rótulo→campo, com 'mãe' ANTES de 'nome'
+// (p/ "Nome da mãe" não virar o paciente) e heurísticas p/ texto sem rótulo.
+var PD_LABELS = [
+  ['mae',        /^\s*(?:nome da m[ãa]e|m[ãa]e|genitora|filia[çc][ãa]o|filho\(a\) de|filho de|filha de)\b[\s.:\-]*(.*)$/i],
+  ['cpf_pag',    /^\s*(?:cpf\s+(?:do\s+)?pagador|cpf\s+resp\w*)\b[\s.:\-]*(.*)$/i],
+  ['nome',       /^\s*(?:nome(?:\s+(?:completo|civil|d[oa]\s+(?:paciente|pessoa)))?|paciente|pac|pt)\b[\s.:\-]*(.*)$/i],
+  ['cpf',        /^\s*c\s*\.?\s*p\s*\.?\s*f\b[\s.:\-]*(.*)$/i],
+  ['rg',         /^\s*(?:r\s*\.?\s*g|identidade|carteira de identidade)\b[\s.:\-]*(.*)$/i],
+  ['dn',         /^\s*(?:d\s*\.?\s*n|d\s*t\.?\s*nasc\w*|nasc\w*|data de nascimento|nascido|nascida)\b[\s.:\-]*(.*)$/i],
+  ['telefone',   /^\s*(?:whats\s*app|whats|wpp|zap|tel(?:efone)?|fone|cel(?:ular)?|contato)\b[\s.:\-]*(.*)$/i],
+  ['email',      /^\s*e-?\s*mail\b[\s.:\-]*(.*)$/i],
+  ['cep',        /^\s*c\s*e\s*p\b[\s.:\-]*(.*)$/i],
+  ['endereco',   /^\s*(?:endere[çc]o|logradouro|rua|av\.?|avenida)\b[\s.:\-]*(.*)$/i],
+  ['cidade',     /^\s*(?:cidade|munic[ií]pio)\b[\s.:\-]*(.*)$/i],
+  ['pagamento',  /^\s*(?:forma de pagamento|pagamento|pgto|pagou (?:com|no|em))\b[\s.:\-]*(.*)$/i],
+  ['valor',      /^\s*(?:valor|pre[çc]o)\b[\s.:\-]*(.*)$/i],
+  ['recibo',     /^\s*recibo\b[\s.:\-?]*(.*)$/i],
+  ['qp',         /^\s*(?:queixa(?:\s+principal)?|qp|motivo(?:\s+da\s+consulta)?)\b[\s.:\-]*(.*)$/i],
+  ['antecedentes',/^\s*(?:antecedentes?|comorbidades?|problemas de sa[úu]de|hist[óo]ria patol[óo]gica)\b[\s.:\-]*(.*)$/i],
+  ['medicacoes', /^\s*(?:medica[çc][õo]\w*|medicamentos?|rem[ée]dios?|uso cont[íi]nuo)\b[\s.:\-]*(.*)$/i],
+  ['alergias',   /^\s*alergi\w*\b[\s.:\-]*(.*)$/i],
+  ['tabagismo',  /^\s*(?:tabagismo|fumante|fumo|tabaco)\b[\s.:\-]*(.*)$/i],
+  ['obs',        /^\s*(?:obs\w*|observa[çc][õo]\w*)\b[\s.:\-]*(.*)$/i]
+];
+var PD_MESES = {janeiro:1,fevereiro:2,marco:3,'março':3,abril:4,maio:5,junho:6,
+                julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+
+function pdNormDN(s) {
+  s = (s || '').trim();
+  var m = s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (!m) {
+    var i = s.match(/(\d{4})-(\d{2})-(\d{2})/);                  // ISO
+    if (i) m = [0, i[3], i[2], i[1]];
+    else {
+      var e = s.toLowerCase().match(/(\d{1,2})\s*de\s*([a-zç]+)\s*de\s*(\d{4})/); // "12 de março de 1946"
+      if (e && PD_MESES[e[2]]) m = [0, e[1], String(PD_MESES[e[2]]), e[3]];
+    }
+  }
+  if (!m) return '';
+  var d = +m[1], mo = +m[2], a = +m[3];
+  if (a < 100) a += (a > (new Date()).getFullYear() % 100 ? 1900 : 2000);
+  if (!(d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && a >= 1900 && a <= (new Date()).getFullYear())) return '';
+  return ('0'+d).slice(-2) + '/' + ('0'+mo).slice(-2) + '/' + a;
+}
+function pdNormCPF(s) {
+  var v = (s || '').replace(/\D/g, '');
+  if (v.length !== 11) return '';
+  return v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
+}
+function pdNormTel(s) {
+  var v = (s || '').replace(/\D/g, '');
+  if (v.length < 10 || v.length > 13) return '';
+  return (s || '').trim();
+}
+function pdNormPagamento(s) {
+  s = (s || '').toLowerCase();
+  if (/pix/.test(s)) return 'Pix';
+  if (/dinheiro|esp[ée]cie/.test(s)) return 'Dinheiro';
+  if (/d[ée]bito/.test(s)) return 'Cartão de débito';
+  if (/cr[ée]dito/.test(s)) return 'Cartão de crédito';
+  if (/conv[êe]nio|plano/.test(s)) return 'Convênio';
+  if (/cortesia|isen|gr[áa]tis/.test(s)) return 'Cortesia';
+  return '';
+}
+function pdSegmentos(texto) {
+  // linhas → segmentos (separadores: 2+ espaços, tab, ·, |, ;) + junta rótulo órfão ao valor seguinte
+  var segs = [];
+  (texto || '').split(/\r?\n/).forEach(function(lin) {
+    lin.split(/\t|\s{2,}|[·|;]/).forEach(function(s) { if (s.trim()) segs.push(s.trim()); });
+  });
+  var out = [], i = 0;
+  function ehRotuloOrfao(s) {
+    return PD_LABELS.some(function(L) { var m = s.match(L[1]); return m && !m[m.length-1].trim(); });
+  }
+  while (i < segs.length) {
+    if (ehRotuloOrfao(segs[i]) && i + 1 < segs.length && !ehRotuloOrfao(segs[i+1])) {
+      out.push(segs[i].replace(/[\s.:\-]+$/, '') + ' ' + segs[i+1]); i += 2;
+    } else { out.push(segs[i]); i += 1; }
+  }
+  return out;
+}
+function distribuirColado() {
+  var texto = document.getElementById('f-colar').value;
+  if (!texto.trim()) { document.getElementById('colar-resumo').textContent = 'Cole algum texto primeiro.'; return; }
+  var achado = {};   // campo -> valor (1º vence)
+  function poe(c, v) { v = (v || '').trim(); if (v && !achado[c]) achado[c] = v; }
+  var sobras = [];
+  pdSegmentos(texto).forEach(function(seg) {
+    for (var k = 0; k < PD_LABELS.length; k++) {
+      var m = seg.match(PD_LABELS[k][1]);
+      if (m && m[m.length-1].trim()) { poe(PD_LABELS[k][0], m[m.length-1]); return; }
+    }
+    sobras.push(seg);
+  });
+  // heurísticas p/ segmentos SEM rótulo
+  sobras.forEach(function(seg) {
+    if (pdNormCPF(seg))                       { poe('cpf', seg); return; }
+    if (pdNormDN(seg))                        { poe('dn', seg); return; }
+    if (/@/.test(seg))                        { poe('email', seg); return; }
+    if (/R\$\s*[\d.,]+/.test(seg))            { poe('valor', seg); return; }
+    if (pdNormTel(seg) && /\d{4}/.test(seg))  { poe('telefone', seg); return; }
+    if (/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'.\s]+$/.test(seg) && seg.split(/\s+/).length >= 2 && seg.length <= 60) { poe('nome', seg); }
+  });
+  // normalizações
+  if (achado.dn)       achado.dn = pdNormDN(achado.dn) || '';
+  if (achado.cpf)      achado.cpf = pdNormCPF(achado.cpf) || '';
+  if (achado.cpf_pag)  achado.cpf_pag = pdNormCPF(achado.cpf_pag) || '';
+  if (achado.pagamento && !achado.valor) {              // "pagou com crédito R$ 400" → valor
+    var mv = achado.pagamento.match(/R\$\s*([\d.,]+)/i);
+    if (mv) achado.valor = mv[1];
+  }
+  if (achado.valor)    achado.valor = (achado.valor.match(/[\d.,]+/) || [''])[0];
+  if (achado.pagamento) achado.pagamento = pdNormPagamento(achado.pagamento);
+  if (achado.recibo)   achado.recibo = /sim|s\b|emitid/i.test(achado.recibo) ? 'Sim' : (/n[ãa]o|nao|\bn\b/i.test(achado.recibo) ? 'Não' : '');
+  if (achado.cep)      achado.endereco = ((achado.endereco || '') + ' CEP ' + achado.cep).trim();
+  var MAPA = { nome:'f-nome', dn:'f-dn', cpf:'f-cpf', rg:'f-rg', telefone:'f-telefone',
+               email:'f-email', endereco:'f-endereco', cidade:'f-cidade', qp:'f-qp',
+               antecedentes:'f-antecedentes', medicacoes:'f-medicacoes', alergias:'f-alergias',
+               tabagismo:'f-tabagismo', obs:'f-obs-clin', pagamento:'f-pagamento',
+               valor:'f-valor', recibo:'f-recibo', cpf_pag:'f-cpf-pag' };
+  var preenchidos = [], mantidos = [];
+  Object.keys(MAPA).forEach(function(c) {
+    if (!achado[c]) return;
+    var el = document.getElementById(MAPA[c]);
+    if (!el) return;
+    if ((el.value || '').trim()) { mantidos.push(c); return; }   // não sobrescreve o que já foi digitado
+    el.value = achado[c];
+    el.style.outline = '2px solid #1e8449';
+    setTimeout(function() { el.style.outline = ''; }, 2500);
+    preenchidos.push(c);
+  });
+  if (preenchidos.indexOf('nome') >= 0 || preenchidos.indexOf('dn') >= 0) {
+    try { resetBusca(); } catch (e) {}
+  }
+  var r = document.getElementById('colar-resumo');
+  r.textContent = preenchidos.length
+    ? ('✓ Preenchidos: ' + preenchidos.join(', ') +
+       (mantidos.length ? ' · mantidos (já digitados): ' + mantidos.join(', ') : '') +
+       ' — confira antes de registrar.')
+    : 'Nada reconhecido' + (mantidos.length ? ' de novo (campos já preenchidos: ' + mantidos.join(', ') + ')' : '') + '.';
+}
+
 function mascaraDN(el) {
   var v = el.value.replace(/\D/g,'');
   if (v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
