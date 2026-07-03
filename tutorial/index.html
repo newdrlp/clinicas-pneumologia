@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Tutorial — Recepção e Sala de Espera · Pneumologia PE</title>
+<style>
+  :root{
+    --azul:#1f618d; --azul2:#2980b9; --verde:#1e8449; --roxo:#8e44ad;
+    --laranja:#b9770e; --verm:#c0392b; --cinza:#7f8c8d; --fundo:#f4f7fa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,Arial,sans-serif}
+  body{background:var(--fundo);color:#2c3e50;line-height:1.55}
+  header{background:var(--azul);color:#fff;padding:18px 16px;text-align:center}
+  header h1{font-size:1.35rem}
+  header p{opacity:.9;font-size:.95rem;margin-top:4px}
+  main{max-width:860px;margin:0 auto;padding:16px}
+
+  /* navegação por passos */
+  .passos{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 18px;justify-content:center}
+  .passos button{border:2px solid var(--azul);background:#fff;color:var(--azul);
+    border-radius:20px;padding:7px 13px;font-size:.85rem;font-weight:bold;cursor:pointer}
+  .passos button.ativo{background:var(--azul);color:#fff}
+  section{display:none;background:#fff;border-radius:12px;padding:22px 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px}
+  section.ativa{display:block}
+  h2{color:var(--azul);font-size:1.2rem;margin-bottom:12px}
+  h3{color:var(--azul2);font-size:1.02rem;margin:16px 0 6px}
+  p,li{font-size:.97rem;margin-bottom:8px}
+  ul,ol{padding-left:22px;margin-bottom:10px}
+  .dica{background:#eef7f2;border-left:4px solid var(--verde);padding:10px 12px;
+    border-radius:6px;margin:10px 0;font-size:.93rem}
+  .atencao{background:#fdf3e6;border-left:4px solid var(--laranja);padding:10px 12px;
+    border-radius:6px;margin:10px 0;font-size:.93rem}
+  .url{display:inline-block;background:#eef2f6;color:var(--azul);font-weight:bold;
+    padding:3px 10px;border-radius:6px;font-family:Consolas,monospace;font-size:.92rem;
+    word-break:break-all}
+  .navrodape{display:flex;justify-content:space-between;margin-top:18px}
+  .navrodape button{background:var(--azul);color:#fff;border:none;border-radius:8px;
+    padding:10px 20px;font-size:1rem;font-weight:bold;cursor:pointer}
+  .navrodape button:disabled{background:#b8c4ce;cursor:default}
+
+  /* mapa do sistema */
+  .mapa{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}
+  .mapa div{border:2px solid var(--azul2);border-radius:10px;padding:12px;text-align:center;background:#f8fbfd}
+  .mapa b{color:var(--azul);display:block;margin-bottom:4px}
+  .mapa small{color:var(--cinza)}
+
+  /* cartão do board (simulador) */
+  .cartao{border:1px solid #d5dde5;border-left:6px solid var(--laranja);border-radius:10px;
+    padding:12px 14px;margin:10px 0;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .cartao .nome{font-weight:bold;font-size:1.05rem}
+  .cartao .meta{color:var(--cinza);font-size:.85rem;margin:2px 0 8px}
+  .cartao .st{display:inline-block;padding:2px 10px;border-radius:12px;color:#fff;
+    font-size:.8rem;font-weight:bold;background:var(--laranja)}
+  .cartao .botoes{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+  .cartao .botoes button{border:none;border-radius:6px;padding:6px 12px;font-size:.85rem;
+    font-weight:bold;cursor:pointer;background:#eef2f6;color:var(--azul)}
+  .cartao .botoes button.destaque{background:var(--azul2);color:#fff}
+  .cartao .botoes button.qr{background:#f4ecf7;color:var(--roxo)}
+  .selo{display:inline-block;background:var(--roxo);color:#fff;border-radius:10px;
+    padding:1px 8px;font-size:.75rem;font-weight:bold;margin-left:6px}
+
+  /* simulação QR / celular */
+  .fone{max-width:270px;margin:14px auto;border:10px solid #2c3e50;border-radius:26px;
+    background:#fff;padding:16px 14px;text-align:center}
+  .fone .pos{font-size:2.6rem;font-weight:bold;color:var(--azul)}
+  .qrbox{width:130px;height:130px;margin:10px auto;background:
+    repeating-linear-gradient(0deg,#2c3e50 0 6px,#fff 6px 12px),
+    repeating-linear-gradient(90deg,#2c3e50 0 6px,#fff 6px 12px);
+    background-blend-mode:screen;border:6px solid #fff;outline:2px solid #d5dde5}
+
+  /* TV */
+  .tv{background:#0b2239;color:#fff;border-radius:12px;padding:22px;text-align:center;margin:12px 0}
+  .tv .senha{font-size:3rem;font-weight:bold;letter-spacing:2px}
+  .tv small{opacity:.75}
+
+  /* quiz */
+  .quiz{border:1px solid #d5dde5;border-radius:10px;padding:14px;margin:12px 0}
+  .quiz .ops button{display:block;width:100%;text-align:left;margin:6px 0;background:#f8fbfd;
+    border:1px solid #d5dde5;border-radius:8px;padding:9px 12px;font-size:.93rem;cursor:pointer}
+  .quiz .ok{background:#eaf7ef !important;border-color:var(--verde) !important;font-weight:bold}
+  .quiz .erro{background:#fdecea !important;border-color:var(--verm) !important}
+  .check{list-style:none;padding-left:0}
+  .check li{padding-left:30px;position:relative;margin-bottom:10px}
+  .check li::before{content:"☐";position:absolute;left:4px;color:var(--azul);font-size:1.1rem}
+  footer{text-align:center;color:var(--cinza);font-size:.8rem;padding:18px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🩺 Tutorial da Recepção e Sala de Espera</h1>
+  <p>Pneumologia PE · Dr. Lucas Pereira de Souza — treinamento das secretárias</p>
+</header>
+<main>
+
+<div class="passos" id="menu"></div>
+
+<!-- ════════ 1. O SISTEMA ════════ -->
+<section data-titulo="1. O sistema">
+  <h2>O que é o sistema (visão geral)</h2>
+  <p>São <b>4 telas que conversam entre si</b>. Você usa as duas primeiras; as outras duas
+  funcionam sozinhas:</p>
+  <div class="mapa">
+    <div><b>📝 Recepção</b><small>Você registra a entrada do paciente (ficha completa).</small></div>
+    <div><b>🪑 Sala de espera</b><small>A fila do dia, em tempo real. Você chama e organiza por aqui.</small></div>
+    <div><b>📺 TV da sala</b><small>Mostra a senha de quem foi chamado e toca um aviso.</small></div>
+    <div><b>📱 Celular do paciente</b><small>Pelo QR Code, ele acompanha a posição dele na fila.</small></div>
+  </div>
+  <p>Quando você registra a entrada na <b>Recepção</b>, o paciente <b>aparece sozinho</b> na
+  Sala de espera. Quando alguém marca <b>Concluir</b>, ele sai da fila. Tudo se atualiza
+  automaticamente em todos os aparelhos.</p>
+  <div class="dica">💡 <b>O médico também vê e mexe na mesma fila</b> pelo prontuário dele:
+  quando ele encerra uma consulta, o cartão do paciente fica <b>verde (concluído)</b> sozinho
+  na sua tela — está tudo certo, não é defeito.</div>
+</section>
+
+<!-- ════════ 2. ACESSO ════════ -->
+<section data-titulo="2. Acesso">
+  <h2>Como entrar (endereços e senha)</h2>
+  <h3>Endereços</h3>
+  <ul>
+    <li>Recepção (registrar paciente): <span class="url">recepcao.pneumologia-pe.com.br</span></li>
+    <li>Sala de espera (fila do dia): <span class="url">recepcao.pneumologia-pe.com.br/sala/</span></li>
+    <li>TV da sala: <span class="url">recepcao.pneumologia-pe.com.br/sala/tv/</span></li>
+  </ul>
+  <h3>Login</h3>
+  <ul>
+    <li><b>Cada atendente tem o próprio usuário e senha</b> (peça os seus ao Dr. Lucas).</li>
+    <li>Pode entrar <b>mais de uma atendente ao mesmo tempo</b>, cada uma no seu computador ou
+    celular — todas veem a mesma fila.</li>
+    <li>Na sala de espera, a faixa <b>“Online agora”</b> mostra quem está com a tela aberta.</li>
+  </ul>
+  <div class="dica">💡 <b>Salve o atalho:</b> no computador, favorito na barra do navegador; no
+  celular, “Adicionar à tela inicial”. Funciona em qualquer navegador (Chrome, Edge…).</div>
+  <div class="atencao">⚠️ A senha é individual — não compartilhe nem deixe anotada à vista.
+  Os dados dos pacientes são sigilosos (LGPD).</div>
+</section>
+
+<!-- ════════ 3. RECEPÇÃO ════════ -->
+<section data-titulo="3. Registrar paciente">
+  <h2>Recepção: registrar a entrada do paciente</h2>
+  <ol>
+    <li>Entre em <span class="url">recepcao.pneumologia-pe.com.br</span> com seu usuário.</li>
+    <li>Digite <b>Nome completo</b> e <b>Data de nascimento</b> e use
+    <b>“Verificar ficha existente”</b> — se o paciente já veio antes ou fez o
+    pré-atendimento pela internet, os dados aparecem preenchidos.</li>
+    <li>Complete o que faltar: CPF, telefone/WhatsApp, endereço, cidade, clínica,
+    queixa (motivo da consulta) e o financeiro (forma de pagamento, valor, recibo).</li>
+    <li>Clique em <b>Registrar entrada</b>. Vai aparecer <b>“Entrada registrada!”</b> —
+    e o paciente já entra na fila da Sala de espera.</li>
+    <li>Use <b>“+ Próximo paciente”</b> para limpar a tela e atender o próximo,
+    ou <b>“🪑 Ver sala de espera”</b> para ir à fila.</li>
+  </ol>
+  <div class="dica">💡 <b>Mandou duas vezes sem querer?</b> Sem problema: o sistema
+  reconhece que é o mesmo paciente do dia e <b>atualiza</b> a ficha em vez de duplicar.</div>
+  <div class="dica">💡 O <b>documento do paciente</b> (ficha no Word/Google Docs) é gerado
+  sozinho em até 1 minuto — você não precisa fazer nada.</div>
+</section>
+
+<!-- ════════ 4. SALA DE ESPERA ════════ -->
+<section data-titulo="4. Sala de espera">
+  <h2>Sala de espera: a fila do dia</h2>
+  <p>Cada paciente é um <b>cartão</b>. A fila se organiza sozinha por <b>ordem de chegada</b>
+  e <b>prioridade</b> (gestantes/deficiência conforme marcado, e <b>80+ anos entra como
+  super-prioridade automática</b>, calculada pela data de nascimento).</p>
+
+  <h3>Experimente aqui (simulação — pode clicar!)</h3>
+  <div class="cartao" id="demo">
+    <span class="nome">MARIA EXEMPLO DA SILVA <span class="selo" id="demo-selo" style="display:none">SP 80+</span></span>
+    <div class="meta">DN 12/03/1946 · 80 anos · chegada 08:12 · senha <b>07</b></div>
+    <span class="st" id="demo-st">Aguardando</span>
+    <div class="botoes">
+      <button class="destaque" onclick="demoStatus('Chamado','#8e44ad')">Chamar</button>
+      <button onclick="demoStatus('Em atendimento','#2980b9')">Em atendimento</button>
+      <button onclick="demoStatus('Concluído','#1e8449')">Concluir</button>
+      <button onclick="demoStatus('Faltou','#c0392b')">Faltou</button>
+      <button onclick="demoStatus('Aguardando','#b9770e')">↩ Reabrir</button>
+      <button class="qr" onclick="irPara(4)">QR</button>
+    </div>
+  </div>
+
+  <h3>O ciclo de cada paciente</h3>
+  <ol>
+    <li><b>Chamar</b> — anuncia o paciente: a senha aparece na TV e toca o aviso.</li>
+    <li><b>Em atendimento</b> — entrou no consultório.</li>
+    <li><b>Concluir</b> — consulta terminou (o médico geralmente marca isso sozinho, do
+    consultório).</li>
+    <li><b>Faltou</b> — chamou e não estava. Se a pessoa voltar, use <b>↩ Reabrir</b>:
+    ela <b>mantém a posição</b> na fila.</li>
+  </ol>
+
+  <h3>Outros recursos da tela</h3>
+  <ul>
+    <li><b>Arrastar o cartão</b> = mudar a ordem da fila manualmente (ex.: encaixe).</li>
+    <li><b>“+ Registrar chegada”</b> = entrada rápida só com Nome + DN (a ficha completa
+    pode ser feita depois na Recepção — não duplica).</li>
+    <li><b>Mural de recados</b> = bilhetes do dia entre a equipe (“Dr. chega 14h”).</li>
+    <li><b>↻ Atualizar</b> = força a atualização (mas a tela já se atualiza sozinha).</li>
+  </ul>
+</section>
+
+<!-- ════════ 5. QR CODE ════════ -->
+<section data-titulo="5. QR do paciente">
+  <h2>QR Code: o paciente acompanha a vez pelo celular</h2>
+  <p>No cartão do paciente há um botão <b>QR</b>. Ele abre um código para o paciente
+  <b>apontar a câmera do celular</b> — e pronto: ele pode ir ao café ou ficar no carro,
+  acompanhando a fila de longe.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center">
+    <div style="text-align:center">
+      <div class="qrbox"></div>
+      <small>1. Você clica em <b>QR</b> e mostra a tela<br>ou usa <b>“Copiar link”</b> e manda no WhatsApp</small>
+    </div>
+    <div class="fone">
+      <div style="font-size:.85rem;color:var(--cinza)">Sua posição na fila</div>
+      <div class="pos">3º</div>
+      <div style="font-size:.9rem">tempo estimado ~24 min</div>
+      <hr style="margin:10px 0;border:none;border-top:1px solid #eee">
+      <small>2. O celular do paciente mostra a posição e <b>avisa com som</b> quando
+      chegar a vez. Ele NÃO vê os outros pacientes.</small>
+    </div>
+  </div>
+  <div class="dica">💡 O tempo estimado é calculado pela média das últimas consultas do dia —
+  é uma estimativa, não uma promessa. Explique isso ao paciente.</div>
+  <div class="atencao">⚠️ O QR é <b>individual</b> (um por paciente, vale só no dia).
+  Não serve para outro paciente nem para outro dia.</div>
+</section>
+
+<!-- ════════ 6. TV ════════ -->
+<section data-titulo="6. TV da sala">
+  <h2>TV da sala: senha e aviso sonoro</h2>
+  <p>Abra <span class="url">recepcao.pneumologia-pe.com.br/sala/tv/</span> no navegador da TV
+  (ou de um computador ligado na TV) e aperte <b>F11</b> para tela cheia. É só deixar aberta.</p>
+  <div class="tv">
+    <small>CHAMANDO — guichê/consultório</small>
+    <div class="senha">SENHA 07</div>
+    <small>🔔 toca um gongo quando chama</small>
+  </div>
+  <ul>
+    <li>A senha é <b>só um número, por ordem de chegada</b> — de propósito: a TV não mostra
+    nome nem tipo de prioridade de ninguém (privacidade/LGPD).</li>
+    <li>Quando você (ou o médico) clica <b>Chamar</b>, a senha aparece na TV e o gongo toca.</li>
+    <li>A senha do paciente também aparece no cartão dele na sua tela e no celular dele (QR).</li>
+  </ul>
+</section>
+
+<!-- ════════ 7. TREINO ════════ -->
+<section data-titulo="7. Treino e dúvidas">
+  <h2>Checklist de treino (faça com um paciente TESTE)</h2>
+  <p>Combine com o Dr. Lucas um horário e pratique com o nome
+  <b>“PACIENTE TESTE — TREINAMENTO”</b> (depois é só marcar Faltou/Concluir):</p>
+  <ul class="check">
+    <li>Entrar na Recepção com o SEU login e registrar o paciente teste.</li>
+    <li>Abrir a Sala de espera e encontrar o cartão dele na fila.</li>
+    <li>Clicar em <b>Chamar</b> e conferir a senha + gongo na TV.</li>
+    <li>Gerar o <b>QR</b>, ler com o próprio celular e ver a tela de posição.</li>
+    <li>Arrastar o cartão para mudar a ordem e depois voltar.</li>
+    <li>Escrever um recado no mural e conferir que a colega vê.</li>
+    <li>Marcar <b>Concluir</b> e ver o cartão sair da fila de espera.</li>
+  </ul>
+
+  <h2 style="margin-top:20px">Teste rápido (clique na resposta)</h2>
+  <div class="quiz">
+    <p><b>1.</b> Registrei o mesmo paciente duas vezes hoje. O que acontece?</p>
+    <div class="ops">
+      <button onclick="quiz(this,false)">Fica duplicado e preciso ligar para o suporte</button>
+      <button onclick="quiz(this,true)">Nada de errado: o sistema atualiza a ficha do dia, sem duplicar</button>
+    </div>
+  </div>
+  <div class="quiz">
+    <p><b>2.</b> O cartão de um paciente ficou verde (“concluído”) sem eu ter clicado. Por quê?</p>
+    <div class="ops">
+      <button onclick="quiz(this,true)">O médico encerrou a consulta pelo prontuário — é normal</button>
+      <button onclick="quiz(this,false)">O sistema travou e apagou o paciente</button>
+    </div>
+  </div>
+  <div class="quiz">
+    <p><b>3.</b> O paciente quer esperar no carro. O que você faz?</p>
+    <div class="ops">
+      <button onclick="quiz(this,false)">Peço para ele ficar olhando a TV pela janela</button>
+      <button onclick="quiz(this,true)">Clico em QR no cartão dele e ele acompanha a fila pelo celular</button>
+    </div>
+  </div>
+  <div class="quiz">
+    <p><b>4.</b> Chamei e o paciente não estava. Ele aparece 10 minutos depois.</p>
+    <div class="ops">
+      <button onclick="quiz(this,true)">Marco “Faltou” e, quando voltar, uso “↩ Reabrir” — ele mantém a posição</button>
+      <button onclick="quiz(this,false)">Registro o paciente de novo, do zero</button>
+    </div>
+  </div>
+
+  <h2 style="margin-top:20px">Deu problema?</h2>
+  <ul>
+    <li><b>“Registro demorou”/internet caiu:</b> espere e clique <b>↻ Atualizar</b> antes de
+    reenviar — e mesmo que reenvie, não duplica.</li>
+    <li><b>A fila não atualiza:</b> confira a internet e recarregue a página (F5).</li>
+    <li>Qualquer outra coisa: recado no mural + WhatsApp do Dr. Lucas.</li>
+  </ul>
+</section>
+
+<div class="navrodape">
+  <button id="b-ant" onclick="navegar(-1)">← Anterior</button>
+  <button id="b-prox" onclick="navegar(1)">Próximo →</button>
+</div>
+</main>
+<footer>Pneumologia PE · material interno de treinamento · sem dados reais de pacientes</footer>
+
+<script>
+var secoes = Array.prototype.slice.call(document.querySelectorAll('section'));
+var menu = document.getElementById('menu');
+var atual = 0;
+secoes.forEach(function(s, i){
+  var b = document.createElement('button');
+  b.textContent = s.getAttribute('data-titulo');
+  b.onclick = function(){ irPara(i); };
+  menu.appendChild(b);
+});
+function irPara(i){
+  atual = Math.max(0, Math.min(secoes.length - 1, i));
+  secoes.forEach(function(s, j){ s.classList.toggle('ativa', j === atual); });
+  menu.querySelectorAll('button').forEach(function(b, j){ b.classList.toggle('ativo', j === atual); });
+  document.getElementById('b-ant').disabled = (atual === 0);
+  document.getElementById('b-prox').disabled = (atual === secoes.length - 1);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+function navegar(d){ irPara(atual + d); }
+irPara(0);
+
+function demoStatus(rotulo, cor){
+  var st = document.getElementById('demo-st');
+  st.textContent = rotulo; st.style.background = cor;
+  document.getElementById('demo').style.borderLeftColor = cor;
+  document.getElementById('demo-selo').style.display = 'inline-block';
+}
+function quiz(btn, certo){
+  var ops = btn.parentNode.querySelectorAll('button');
+  ops.forEach ? ops.forEach(marcar) : Array.prototype.forEach.call(ops, marcar);
+  function marcar(b){ b.classList.remove('ok','erro'); b.disabled = false; }
+  btn.classList.add(certo ? 'ok' : 'erro');
+  if (certo) { btn.textContent = '✓ ' + btn.textContent.replace(/^✓ /,''); }
+}
+</script>
+</body>
+</html>
