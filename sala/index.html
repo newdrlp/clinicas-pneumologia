@@ -174,7 +174,7 @@
 // ══ CONFIG ══ (mesmo endpoint da recepção — ações sala_* após o deploy)
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
 
-var estado = { usuario:'', nome:'', clinica:'' };
+var estado = { usuario:'', nome:'', clinica:'', token:'', perfil:'' };
 var pollTimer = null, tickTimer = null, presencaTimer = null;
 var renderClientMs = 0;       // Date.now() no momento do último render
 var ultimoFetchMs = 0;        // p/ "atualizado há Xs"
@@ -185,6 +185,9 @@ var audioBoard = null, chamadosBoard = {}, boardPrimeira = true;   // som de cha
 
 // ══ FETCH (mesmo padrão da recepção: POST simples, lê JSON) ══
 function fetchJson(payload, tempoMs){
+  // (F1) toda chamada leva o token da sessão: com ele o servidor filtra a
+  // clínica do perfil restrito e rotula chegadas sem clínica.
+  if (payload && !payload.token && estado && estado.token) payload.token = estado.token;
   var ctrl = window.AbortController ? new AbortController() : null;
   var tId;
   var timeout = new Promise(function(_,rej){ tId=setTimeout(function(){ if(ctrl)ctrl.abort();
@@ -219,7 +222,8 @@ function fazerLogin(){
     .then(function(r){return r.json();})
     .then(function(res){
       if(res.ok){
-        aplicarSessao({usuario:u, nome:res.nome_exibicao||u, clinica:res.clinica_padrao||''});
+        aplicarSessao({usuario:u, nome:res.nome_exibicao||u, clinica:res.clinica_padrao||'',
+                       token:res.token||'', perfil:res.perfil||''});
         try{ sessionStorage.setItem('sala_sessao', JSON.stringify(estado)); }catch(e){}
       } else { alerta('alerta-login','erro',res.erro||'Credenciais inválidas.'); }
     })

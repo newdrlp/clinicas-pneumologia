@@ -541,6 +541,8 @@ function fazerLogin() {
       estado.usuario       = usuario;
       estado.nomeExibicao  = res.nome_exibicao;
       estado.clinicaPadrao = res.clinica_padrao;
+      estado.token         = res.token  || '';   // (F1) sessão de 12 h
+      estado.perfil        = res.perfil || '';
       document.getElementById('badge-usuario').textContent = '👤 ' + res.nome_exibicao;
       document.getElementById('badge-usuario').style.display = 'block';
       mostrar('tela-login', false);
@@ -822,6 +824,9 @@ function alertar(id, tipo, msg) {
   el.textContent = msg;
 }
 function fetchJsonComTimeout(payload, tempoMs) {
+  // (F1) toda chamada leva o token da sessão: o servidor decide o que
+  // desmascarar conforme o perfil (restrito/amplo).
+  if (payload && !payload.token && estado && estado.token) payload.token = estado.token;
   var controller = window.AbortController ? new AbortController() : null;
   var tempo = tempoMs || 20000;
   var timeoutId;
@@ -858,6 +863,13 @@ function mensagemErroConexao(erro, contexto) {
 function preencherSensivel(id, valorCompleto, valorMascara) {
   var el = document.getElementById(id);
   if (!el || v(id)) return;
+  if (valorCompleto) {
+    // (F1) o servidor só envia o valor claro quando o perfil da sessão
+    // pode vê-lo — exibe como campo normal (editável e salvável).
+    el.value = valorCompleto;
+    limparMarcacaoMascara(el);
+    return;
+  }
   var mascara = valorMascara || mascararLocal(id, valorCompleto);
   if (!mascara) return;
   el.value = mascara;
