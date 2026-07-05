@@ -264,9 +264,9 @@
 <header>
   <h1>Pneumologia PE · Recepção</h1>
   <span id="nav-sessao" style="display:none;font-size:.85rem;white-space:nowrap">
-    <a href="portal/" style="color:#fff;text-decoration:none">🏠 Portal</a> &nbsp;·&nbsp;
-    <a href="sala/" style="color:#fff;text-decoration:none">🪑 Sala de espera</a> &nbsp;·&nbsp;
-    <a href="#" onclick="sairSessao();return false" style="color:#cfe0f3;text-decoration:none">Sair</a>
+    <a href="portal/" style="color:#fff;text-decoration:none;background:rgba(255,255,255,.16);padding:5px 10px;border-radius:16px">🏠 Portal</a>
+    <a href="sala/" style="color:#fff;text-decoration:none;background:rgba(255,255,255,.16);padding:5px 10px;border-radius:16px;margin-left:6px">🪑 Sala de espera</a>
+    <a href="#" onclick="sairSessao();return false" style="color:#cfe0f3;text-decoration:none;padding:5px 8px;margin-left:6px">Sair</a>
   </span>
   <span id="badge-usuario"></span>
 </header>
@@ -301,6 +301,11 @@
 
 <!-- ══ TELA 2: FORMULÁRIO ══ -->
 <div id="tela-form" class="hidden">
+
+  <!-- (F2) atalho visível para a fila do dia; a volta é o "↩ Recepção" no topo da sala -->
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button class="btn btn-secundario" style="width:auto;padding:8px 16px" onclick="irParaSala()">🪑 Ver sala de espera</button>
+  </div>
 
   <!-- Colar dados → distribuir nos campos (parser 100% local, nada sai do navegador) -->
   <div class="secao" style="border:2px dashed #2980b9;background:#f8fbfd">
