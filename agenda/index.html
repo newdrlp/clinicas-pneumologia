@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Agenda · Pneumologia PE</title>
+<style>
+  :root{
+    --azul:#1a3a5c; --azul2:#24476b; --bg:#eef2f6; --card:#ffffff; --linha:#dbe3ec;
+    --txt:#20262e; --sub:#5b6b7d; --verde:#1e7d46; --vermelho:#b03a2e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);
+       color:var(--txt);font-size:15px;min-height:100vh}
+  header{background:var(--azul);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;flex:1;min-width:140px}
+  header a{color:#fff;text-decoration:none;font-size:13px;background:rgba(255,255,255,.16);
+           padding:5px 10px;border-radius:16px}
+  header a.discreto{background:none;color:#cfe0f3}
+  .badge{font-size:.8rem;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px}
+  main{max-width:760px;margin:0 auto;padding:18px 14px}
+  .card{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:16px;color:var(--azul);margin-bottom:10px}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--sub);margin:8px 0 3px}
+  input,select{width:100%;padding:10px 11px;border:1px solid var(--linha);border-radius:8px;font-size:15px;background:#fff}
+  .linha-form{display:flex;gap:10px;flex-wrap:wrap}
+  .linha-form>div{flex:1;min-width:130px}
+  .botoes{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  button{padding:11px 18px;border:0;border-radius:8px;background:var(--azul);color:#fff;
+         font-size:14px;font-weight:700;cursor:pointer}
+  button.cinza{background:#eef2f6;color:var(--azul)}
+  button.perigo{background:#fdecea;color:var(--vermelho)}
+  button:disabled{opacity:.6}
+  .alerta{margin-top:10px;font-size:13px;padding:9px 11px;border-radius:8px;display:none}
+  .alerta.erro{display:block;background:#fdecea;color:#b03a2e}
+  .alerta.ok{display:block;background:#e8f5ec;color:var(--verde)}
+  .filtro{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .filtro select{max-width:260px}
+  .dia{margin-bottom:14px}
+  .dia h3{font-size:14px;color:var(--azul);margin-bottom:6px;text-transform:capitalize}
+  .item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--linha);
+        border-radius:10px;padding:10px 12px;margin-bottom:6px;flex-wrap:wrap}
+  .item.fechada{opacity:.55}
+  .item .clin{font-weight:700;color:var(--azul)}
+  .item .meta{font-size:13px;color:var(--sub);flex:1;min-width:120px}
+  .tag{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:12px}
+  .tag.aberta{background:#e8f5ec;color:var(--verde)}
+  .tag.fechada{background:#f2d7d5;color:var(--vermelho)}
+  .item button{padding:7px 10px;font-size:12.5px}
+  .vazio{color:var(--sub);font-size:14px;text-align:center;padding:18px 0}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📅 Agenda</h1>
+  <span class="badge hidden" id="badge-usuario"></span>
+  <a href="../portal/">🏠 Portal</a>
+  <a href="../">🧾 Recepção</a>
+  <a href="../sala/">🪑 Sala</a>
+  <a href="#" class="discreto" onclick="sairSessao();return false">Sair</a>
+</header>
+
+<main>
+
+<div id="tela-sem-sessao" class="card hidden">
+  <h2>Sessão necessária</h2>
+  <p style="color:var(--sub);font-size:14px">Entre pelo <a href="../portal/">Portal</a> para abrir a agenda.</p>
+</div>
+
+<div id="tela-agenda" class="hidden">
+
+  <div class="card">
+    <h2 id="form-titulo">Abrir data de atendimento</h2>
+    <div class="linha-form">
+      <div><label for="f-data">Data</label><input type="date" id="f-data"></div>
+      <div><label for="f-clinica">Clínica</label><select id="f-clinica"></select></div>
+      <div><label for="f-turno">Turno</label>
+        <select id="f-turno"><option>Manhã</option><option>Tarde</option><option>Dia todo</option></select></div>
+      <div><label for="f-vagas">Vagas (opcional)</label><input type="number" id="f-vagas" min="0" placeholder="ex.: 20"></div>
+    </div>
+    <label for="f-obs">Observações (opcional)</label>
+    <input id="f-obs" maxlength="200" placeholder="ex.: encaixes só até 10h; trazer exames">
+    <div class="botoes">
+      <button id="btn-salvar" onclick="salvar('aberta')">💾 Salvar data aberta</button>
+      <button id="btn-fechar" class="perigo hidden" onclick="salvar('fechada')">🚫 Fechar esta data</button>
+      <button class="cinza" onclick="limparForm()">Limpar</button>
+    </div>
+    <div class="alerta" id="alerta-form"></div>
+  </div>
+
+  <div class="card">
+    <div class="filtro">
+      <h2 style="flex:1;margin:0">Próximos 60 dias</h2>
+      <select id="f-filtro" class="hidden" onchange="carregar()"></select>
+      <button class="cinza" onclick="carregar()">↻ Atualizar</button>
+    </div>
+    <div id="lista"><p class="vazio">Carregando…</p></div>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
+
+// ══ SESSÃO COMPARTILHADA — portal / recepção / sala / agenda ══
+var SESSAO_KEY = 'pneumo_sessao', SESSAO_HORAS = 11.5;
+function sessaoLer(){
+  try{
+    var s = JSON.parse(localStorage.getItem(SESSAO_KEY)||'null');
+    if(!s || !s.token) return null;
+    if(Date.now() - (s.criado_em||0) > SESSAO_HORAS*3600*1000){ localStorage.removeItem(SESSAO_KEY); return null; }
+    return s;
+  }catch(e){ return null; }
+}
+function sairSessao(){ try{ localStorage.removeItem(SESSAO_KEY); }catch(e){} location.href='../portal/'; }
+
+var sess = null, ultimaLista = [];
+
+function $(id){ return document.getElementById(id); }
+function api(payload){
+  if(sess && sess.token) payload.token = sess.token;
+  return fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) }).then(function(r){ return r.json(); });
+}
+function alerta(tipo, msg){
+  var el = $('alerta-form');
+  el.className = 'alerta' + (tipo ? ' ' + tipo : '');
+  el.textContent = msg || '';
+}
+function dataLabel(iso){
+  var p = iso.split('-');
+  var d = new Date(Number(p[0]), Number(p[1])-1, Number(p[2]));
+  return d.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function escapar(s){ var d=document.createElement('div'); d.textContent=String(s==null?'':s); return d.innerHTML; }
+
+function montarSelectClinicas(clinicas){
+  var sel = $('f-clinica');
+  sel.innerHTML = '';
+  if (sess.perfil !== 'amplo') {
+    var o = document.createElement('option');
+    o.textContent = sess.clinica || '(sua clínica)'; o.value = sess.clinica || '';
+    sel.appendChild(o); sel.disabled = true;
+    $('f-filtro').classList.add('hidden');
+    return;
+  }
+  sel.disabled = false;
+  clinicas.forEach(function(c){
+    var o = document.createElement('option'); o.textContent = c; o.value = c; sel.appendChild(o);
+  });
+  var f = $('f-filtro');
+  f.classList.remove('hidden');
+  var atual = f.value;
+  f.innerHTML = '<option value="">Todas as clínicas</option>';
+  clinicas.forEach(function(c){
+    var o = document.createElement('option'); o.textContent = c; o.value = c; f.appendChild(o);
+  });
+  f.value = atual || '';
+}
+
+function carregar(){
+  $('lista').innerHTML = '<p class="vazio">Carregando…</p>';
+  var payload = { acao:'agenda_listar' };
+  var filtro = $('f-filtro').value;
+  if (sess.perfil === 'amplo' && filtro) payload.clinica = filtro;
+  api(payload).then(function(res){
+    if(!res.ok){ $('lista').innerHTML = '<p class="vazio">'+escapar(res.erro||'Erro ao carregar.')+'</p>'; return; }
+    montarSelectClinicas(res.clinicas||[]);
+    ultimaLista = res.itens || [];
+    render(ultimaLista);
+  }).catch(function(){ $('lista').innerHTML = '<p class="vazio">Sem conexão. Tente “Atualizar”.</p>'; });
+}
+
+function render(itens){
+  if(!itens.length){ $('lista').innerHTML = '<p class="vazio">Nenhuma data aberta no período. Use o formulário acima para abrir a primeira.</p>'; return; }
+  var porDia = {};
+  itens.forEach(function(it){ (porDia[it.data] = porDia[it.data] || []).push(it); });
+  var html = '';
+  Object.keys(porDia).sort().forEach(function(dia){
+    html += '<div class="dia"><h3>'+escapar(dataLabel(dia))+'</h3>';
+    porDia[dia].forEach(function(it){
+      html += '<div class="item '+(it.status==='fechada'?'fechada':'')+'">'+
+        '<span class="clin">'+escapar(it.clinica)+'</span>'+
+        '<span class="tag '+(it.status==='fechada'?'fechada':'aberta')+'">'+escapar(it.status)+'</span>'+
+        '<span class="meta">'+escapar(it.turno||'')+(it.vagas?' · '+escapar(it.vagas)+' vagas':'')+
+          (it.obs?' · '+escapar(it.obs):'')+'</span>'+
+        '<button class="cinza" onclick="editar(\''+it.data+'\',\''+escapar(it.clinica).replace(/'/g,"\\'")+'\')">✎ Editar</button>'+
+      '</div>';
+    });
+    html += '</div>';
+  });
+  $('lista').innerHTML = html;
+}
+
+function editar(data, clinica){
+  var it = null;
+  for (var i=0;i<ultimaLista.length;i++){
+    if (ultimaLista[i].data===data && ultimaLista[i].clinica===clinica){ it=ultimaLista[i]; break; }
+  }
+  if(!it) return;
+  $('f-data').value = it.data;
+  if (sess.perfil === 'amplo') $('f-clinica').value = it.clinica;
+  $('f-turno').value = it.turno || 'Dia todo';
+  $('f-vagas').value = it.vagas || '';
+  $('f-obs').value = it.obs || '';
+  $('form-titulo').textContent = 'Editar data — ' + dataLabel(it.data);
+  $('btn-fechar').classList.toggle('hidden', it.status==='fechada');
+  alerta('', '');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function limparForm(){
+  $('f-data').value=''; $('f-vagas').value=''; $('f-obs').value='';
+  $('f-turno').value='Manhã';
+  $('form-titulo').textContent='Abrir data de atendimento';
+  $('btn-fechar').classList.add('hidden');
+  alerta('', '');
+}
+
+function salvar(status){
+  var data = $('f-data').value;
+  if(!data){ alerta('erro','Escolha a data.'); return; }
+  var payload = { acao:'agenda_salvar', data:data, clinica:$('f-clinica').value,
+                  turno:$('f-turno').value, vagas:$('f-vagas').value.trim(),
+                  obs:$('f-obs').value.trim(), status: status||'aberta' };
+  $('btn-salvar').disabled = true; $('btn-fechar').disabled = true;
+  api(payload).then(function(res){
+    if(res.ok){
+      alerta('ok', status==='fechada' ? 'Data fechada.' : (res.atualizado ? 'Data atualizada.' : 'Data aberta!'));
+      if (status==='fechada') limparForm();
+      carregar();
+    } else alerta('erro', res.erro || 'Não foi possível salvar.');
+  }).catch(function(){ alerta('erro','Sem conexão. Tente novamente.'); })
+  .finally(function(){ $('btn-salvar').disabled=false; $('btn-fechar').disabled=false; });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  sess = sessaoLer();
+  if(!sess){ $('tela-sem-sessao').classList.remove('hidden'); return; }
+  $('badge-usuario').textContent = '👤 ' + sess.nome;
+  $('badge-usuario').classList.remove('hidden');
+  $('tela-agenda').classList.remove('hidden');
+  carregar();
+});
+</script>
+</body>
+</html>
