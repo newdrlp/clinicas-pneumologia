@@ -50,6 +50,21 @@
   .item button{padding:7px 10px;font-size:12.5px}
   .vazio{color:var(--sub);font-size:14px;text-align:center;padding:18px 0}
   .hidden{display:none}
+  /* (F5) marcações */
+  .banner-pend{background:#fdf3e0;border:1px solid #e9c88a;color:#8a5a00;border-radius:10px;
+               padding:10px 14px;margin-bottom:12px;font-size:14px;font-weight:600}
+  .marc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f7fafc;
+        border:1px solid var(--linha);border-left:4px solid var(--verde);
+        border-radius:8px;padding:7px 10px;margin:4px 0 4px 22px;font-size:13.5px}
+  .marc.pend{background:#fdf6e8;border-left-color:#d99a1b}
+  .marc.cancelada{opacity:.5;border-left-color:#b8b8b8;text-decoration:line-through}
+  .marc .quem{font-weight:700}
+  .marc .det{color:var(--sub);flex:1;min-width:110px}
+  .marc .tagm{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px}
+  .marc .tagm.pendente{background:#f6e2b8;color:#8a5a00}
+  .marc .tagm.confirmada{background:#e8f5ec;color:var(--verde)}
+  .marc .tagm.online{background:#e0ecf7;color:var(--azul)}
+  .marc button{padding:5px 9px;font-size:12px}
 </style>
 </head>
 <body>
@@ -94,6 +109,39 @@
   </div>
 
   <div class="card">
+    <h2 id="m-titulo">Marcar paciente</h2>
+    <div class="linha-form">
+      <div><label for="m-data">Data</label><input type="date" id="m-data"></div>
+      <div><label for="m-clinica">Clínica</label><select id="m-clinica"></select></div>
+      <div><label for="m-hora">Hora (livre, opcional)</label><input id="m-hora" placeholder="ex.: 14:30"></div>
+    </div>
+    <div class="linha-form">
+      <div><label for="m-nome">Nome do paciente</label><input id="m-nome"></div>
+      <div><label for="m-dn">Nascimento</label><input id="m-dn" placeholder="DD/MM/AAAA" maxlength="10"></div>
+      <div><label for="m-telefone">Telefone/WhatsApp</label><input id="m-telefone"></div>
+    </div>
+    <div class="linha-form">
+      <div><label for="m-modalidade">Modalidade</label>
+        <select id="m-modalidade">
+          <option value="">Selecione…</option>
+          <option>Consulta 1ª Vez</option>
+          <option>Retorno de Consulta</option>
+          <option>Nova Consulta</option>
+          <option>Consulta + Espirometria</option>
+          <option>Espirometria</option>
+          <option>Volta + Espirometria</option>
+          <option>Volta fora do prazo</option>
+        </select></div>
+      <div style="flex:2"><label for="m-obs">Observações (opcional)</label><input id="m-obs" maxlength="200"></div>
+    </div>
+    <div class="botoes">
+      <button id="btn-marcar" onclick="marcarPaciente()">📌 Marcar paciente</button>
+      <button class="cinza" onclick="limparMarcacao()">Limpar</button>
+    </div>
+    <div class="alerta" id="alerta-marc"></div>
+  </div>
+
+  <div class="card">
     <div class="filtro">
       <h2 style="flex:1;margin:0">Próximos 60 dias</h2>
       <select id="f-filtro" class="hidden" onchange="carregar()"></select>
@@ -121,9 +169,14 @@ function sessaoLer(){
 }
 function sairSessao(){ try{ localStorage.removeItem(SESSAO_KEY); }catch(e){} location.href='../portal/'; }
 
-var sess = null, ultimaLista = [];
+var sess = null, ultimaLista = [], ultimasMarc = [];
 
 function $(id){ return document.getElementById(id); }
+function alertaEm(id, tipo, msg){
+  var el = $(id); if(!el) return;
+  el.className = 'alerta' + (tipo ? ' ' + tipo : '');
+  el.textContent = msg || '';
+}
 function api(payload){
   if(sess && sess.token) payload.token = sess.token;
   return fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) }).then(function(r){ return r.json(); });
@@ -141,19 +194,21 @@ function dataLabel(iso){
 function escapar(s){ var d=document.createElement('div'); d.textContent=String(s==null?'':s); return d.innerHTML; }
 
 function montarSelectClinicas(clinicas){
-  var sel = $('f-clinica');
-  sel.innerHTML = '';
-  if (sess.perfil !== 'amplo') {
-    var o = document.createElement('option');
-    o.textContent = sess.clinica || '(sua clínica)'; o.value = sess.clinica || '';
-    sel.appendChild(o); sel.disabled = true;
-    $('f-filtro').classList.add('hidden');
-    return;
-  }
-  sel.disabled = false;
-  clinicas.forEach(function(c){
-    var o = document.createElement('option'); o.textContent = c; o.value = c; sel.appendChild(o);
+  ['f-clinica','m-clinica'].forEach(function(idSel){
+    var sel = $(idSel);
+    sel.innerHTML = '';
+    if (sess.perfil !== 'amplo') {
+      var o = document.createElement('option');
+      o.textContent = sess.clinica || '(sua clínica)'; o.value = sess.clinica || '';
+      sel.appendChild(o); sel.disabled = true;
+      return;
+    }
+    sel.disabled = false;
+    clinicas.forEach(function(c){
+      var o = document.createElement('option'); o.textContent = c; o.value = c; sel.appendChild(o);
+    });
   });
+  if (sess.perfil !== 'amplo') { $('f-filtro').classList.add('hidden'); return; }
   var f = $('f-filtro');
   f.classList.remove('hidden');
   var atual = f.value;
@@ -172,32 +227,122 @@ function carregar(){
   api(payload).then(function(res){
     if(!res.ok){ $('lista').innerHTML = '<p class="vazio">'+escapar(res.erro||'Erro ao carregar.')+'</p>'; return; }
     montarSelectClinicas(res.clinicas||[]);
-    ultimaLista = res.itens || [];
+    ultimaLista  = res.itens || [];
+    ultimasMarc  = res.marcacoes || [];
     render(ultimaLista);
   }).catch(function(){ $('lista').innerHTML = '<p class="vazio">Sem conexão. Tente “Atualizar”.</p>'; });
 }
 
+// (F5) marcações de uma data+clínica (ignora canceladas na contagem ativa)
+function marcDe(data, clinica){
+  return ultimasMarc.filter(function(m){ return m.data===data && m.clinica===clinica; });
+}
+function marcHtml(m){
+  var cls = 'marc' + (m.status==='pendente' ? ' pend' : '') + (m.status==='cancelada' ? ' cancelada' : '');
+  var idArgs = '\''+m.data+'\',\''+escapar(m.clinica).replace(/'/g,"\\'")+'\',\''+
+               escapar(m.nome).replace(/'/g,"\\'")+'\',\''+m.dn+'\'';
+  var botoes = '';
+  if (m.status==='pendente')
+    botoes += '<button onclick="mudarStatusMarcacao('+idArgs+',\'confirmada\')">✔ Confirmar</button>';
+  if (m.status==='pendente' || m.status==='confirmada')
+    botoes += '<button class="perigo" onclick="mudarStatusMarcacao('+idArgs+',\'cancelada\')">✖</button>';
+  return '<div class="'+cls+'">'+
+    (m.hora?'<span class="quem">'+escapar(m.hora)+'</span>':'')+
+    '<span class="quem">'+escapar(m.nome)+'</span>'+
+    '<span class="tagm '+m.status+'">'+escapar(m.status)+'</span>'+
+    (m.origem==='online'?'<span class="tagm online">🌐 online</span>':'')+
+    '<span class="det">'+escapar(m.modalidade||'')+
+      (m.telefone?' · '+escapar(m.telefone):'')+(m.obs?' · '+escapar(m.obs):'')+'</span>'+
+    botoes+'</div>';
+}
+
 function render(itens){
-  if(!itens.length){ $('lista').innerHTML = '<p class="vazio">Nenhuma data aberta no período. Use o formulário acima para abrir a primeira.</p>'; return; }
+  // (F5) banner de pendências — visível assim que a agenda abre
+  var pendentes = ultimasMarc.filter(function(m){ return m.status==='pendente'; });
+  var banner = pendentes.length
+    ? '<div class="banner-pend">⏳ '+pendentes.length+' marcação(ões) online aguardando confirmação — destacadas abaixo.</div>'
+    : '';
+  if(!itens.length && !ultimasMarc.length){
+    $('lista').innerHTML = banner + '<p class="vazio">Nenhuma data aberta no período. Use o formulário acima para abrir a primeira.</p>';
+    return;
+  }
   var porDia = {};
   itens.forEach(function(it){ (porDia[it.data] = porDia[it.data] || []).push(it); });
-  var html = '';
+  // marcação órfã (data sem linha na agenda) também aparece, para não sumir paciente
+  ultimasMarc.forEach(function(m){
+    if(!(porDia[m.data]||[]).some(function(it){ return it.clinica===m.clinica; })){
+      (porDia[m.data] = porDia[m.data] || []).push({ data:m.data, clinica:m.clinica, turno:'',
+        status:'(sem data aberta)', vagas:'', obs:'', regime:'', _orfa:true });
+    }
+  });
+  var html = banner;
   Object.keys(porDia).sort().forEach(function(dia){
     html += '<div class="dia"><h3>'+escapar(dataLabel(dia))+'</h3>';
     porDia[dia].forEach(function(it){
+      var marcs = marcDe(it.data, it.clinica);
+      var ativas = marcs.filter(function(m){ return m.status==='pendente'||m.status==='confirmada'; }).length;
+      var pend   = marcs.filter(function(m){ return m.status==='pendente'; }).length;
       html += '<div class="item '+(it.status==='fechada'?'fechada':'')+'">'+
         '<span class="clin">'+escapar(it.clinica)+'</span>'+
-        '<span class="tag '+(it.status==='fechada'?'fechada':'aberta')+'">'+escapar(it.status)+'</span>'+
+        (it._orfa ? '<span class="tag fechada">sem data aberta</span>'
+                  : '<span class="tag '+(it.status==='fechada'?'fechada':'aberta')+'">'+escapar(it.status)+'</span>')+
         '<span class="meta">'+escapar(it.turno||'')+
           (it.regime==='Hora marcada'?' · ⏰ hora marcada':'')+
-          (it.vagas?' · '+escapar(it.vagas)+' vagas':'')+
+          (it.vagas?' · '+escapar(ativas)+'/'+escapar(it.vagas)+' vagas':(ativas?' · '+ativas+' marcado(s)':''))+
+          (pend?' · <b style="color:#8a5a00">⏳ '+pend+' a confirmar</b>':'')+
           (it.obs?' · '+escapar(it.obs):'')+'</span>'+
-        '<button class="cinza" onclick="editar(\''+it.data+'\',\''+escapar(it.clinica).replace(/'/g,"\\'")+'\')">✎ Editar</button>'+
+        '<button class="cinza" onclick="prefillMarcacao(\''+it.data+'\',\''+escapar(it.clinica).replace(/'/g,"\\'")+'\')">➕ Marcar</button>'+
+        (it._orfa ? '' :
+        '<button class="cinza" onclick="editar(\''+it.data+'\',\''+escapar(it.clinica).replace(/'/g,"\\'")+'\')">✎ Editar</button>')+
       '</div>';
+      marcs.forEach(function(m){ html += marcHtml(m); });
     });
     html += '</div>';
   });
   $('lista').innerHTML = html;
+}
+
+// (F5) ações de marcação
+function prefillMarcacao(data, clinica){
+  $('m-data').value = data;
+  if (sess.perfil === 'amplo') $('m-clinica').value = clinica;
+  $('m-titulo').textContent = 'Marcar paciente — ' + dataLabel(data);
+  alertaEm('alerta-marc','','');
+  window.scrollTo({top:0, behavior:'smooth'});
+  $('m-nome').focus();
+}
+function limparMarcacao(){
+  ['m-data','m-hora','m-nome','m-dn','m-telefone','m-obs'].forEach(function(id){ $(id).value=''; });
+  $('m-modalidade').value='';
+  $('m-titulo').textContent='Marcar paciente';
+  alertaEm('alerta-marc','','');
+}
+function marcarPaciente(){
+  var data=$('m-data').value, nome=$('m-nome').value.trim(), dn=$('m-dn').value.trim();
+  if(!data){ alertaEm('alerta-marc','erro','Escolha a data.'); return; }
+  if(!nome || !dn){ alertaEm('alerta-marc','erro','Nome e nascimento obrigatórios.'); return; }
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(dn)){ alertaEm('alerta-marc','erro','Nascimento no formato DD/MM/AAAA.'); return; }
+  $('btn-marcar').disabled = true;
+  api({ acao:'marcacao_salvar', data:data, clinica:$('m-clinica').value, nome:nome, data_nasc:dn,
+        telefone:$('m-telefone').value.trim(), modalidade:$('m-modalidade').value,
+        hora:$('m-hora').value.trim(), obs:$('m-obs').value.trim() })
+  .then(function(res){
+    if(res.ok){
+      alertaEm('alerta-marc', res.aviso?'erro':'ok',
+               (res.atualizado?'Marcação atualizada.':'Paciente marcado!') + (res.aviso?' '+res.aviso:''));
+      carregar();
+    } else alertaEm('alerta-marc','erro',res.erro||'Não foi possível marcar.');
+  })
+  .catch(function(){ alertaEm('alerta-marc','erro','Sem conexão. Tente novamente.'); })
+  .finally(function(){ $('btn-marcar').disabled=false; });
+}
+function mudarStatusMarcacao(data, clinica, nome, dn, status){
+  api({ acao:'marcacao_status', data:data, clinica:clinica, nome:nome, data_nasc:dn, status:status })
+  .then(function(res){
+    if(res.ok) carregar();
+    else alertaEm('alerta-marc','erro',res.erro||'Não foi possível atualizar.');
+  })
+  .catch(function(){ alertaEm('alerta-marc','erro','Sem conexão. Tente novamente.'); });
 }
 
 function editar(data, clinica){
@@ -250,6 +395,12 @@ document.addEventListener('DOMContentLoaded', function(){
   $('badge-usuario').textContent = '👤 ' + sess.nome;
   $('badge-usuario').classList.remove('hidden');
   $('tela-agenda').classList.remove('hidden');
+  $('m-dn').addEventListener('input', function(){ // DDMMAAAA → DD/MM/AAAA
+    var v = this.value.replace(/\D/g,'');
+    if (v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
+    if (v.length >= 6) v = v.slice(0,5)+'/'+v.slice(5,9);
+    this.value = v;
+  });
   carregar();
 });
 </script>
