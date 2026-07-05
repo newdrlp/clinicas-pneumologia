@@ -350,7 +350,7 @@
   <!-- Clínica -->
   <div class="secao">
     <div class="secao-titulo">
-      <span class="icone">🏥</span> Clínica do Atendimento
+      <span class="icone">🏥</span> Clínica e Modalidade do Atendimento
     </div>
     <div class="campo">
       <label>Clínica *</label>
@@ -363,6 +363,18 @@
         <option value="Clínica Magalhães Pedrosa — Limoeiro PE">Clínica Magalhães Pedrosa — Limoeiro</option>
         <option value="Clínica Carpina — Carpina PE">Clínica Carpina</option>
         <option value="Consultório Médico Vida e Saúde — Cajueiro Seco PE">Vida e Saúde — Cajueiro Seco</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label>Modalidade *</label>
+      <select id="f-tipo">
+        <option value="">Selecione…</option>
+        <option>Consulta 1ª Vez</option>
+        <option>Retorno de Consulta</option>
+        <option>Nova Consulta</option>
+        <option>Espirometria</option>
+        <option>Volta + Espirometria</option>
+        <option>Volta fora do prazo</option>
       </select>
     </div>
   </div>
@@ -667,8 +679,13 @@ function preencherDados(d) {
   preencherSensivel('f-email', d.email, d.email_mascara);
   preencherSensivel('f-endereco', d.endereco, d.endereco_mascara);
 
-  // Dados clínicos: se vieram do pré-atendimento, preenche e trava (só-leitura)
-  if (d.qp || d.antecedentes || d.medicacoes || d.alergias || d.tabagismo) {
+  // (F4, D9) Clínico preenchido PELO PACIENTE: o servidor não envia o conteúdo —
+  // só a lista. A tela marca "✓ preenchido pelo paciente" e trava esses campos;
+  // os vazios continuam livres para a secretária completar.
+  if (d.clinicos_preenchidos && d.clinicos_preenchidos.length) {
+    marcarClinicoPreenchido(d.clinicos_preenchidos);
+  } else if (d.qp || d.antecedentes || d.medicacoes || d.alergias || d.tabagismo) {
+    // (legado) resposta sem sessão — comportamento antigo: preenche e trava
     set('f-qp', d.qp + (d.qs ? '\n' + d.qs : ''));
     set('f-antecedentes', [d.antecedentes, d.outros_antec].filter(Boolean).join(' · '));
     set('f-medicacoes', d.medicacoes || '');
@@ -678,6 +695,36 @@ function preencherDados(d) {
     var oc = document.getElementById('clin-origem');
     if (oc) oc.textContent = '✓ Vindo do pré-atendimento do paciente (somente leitura).';
   }
+}
+
+// (F4) mapa lista do servidor → campos da tela
+var CLINICO_CAMPOS = { queixa:'f-qp', antecedentes:'f-antecedentes',
+                       medicacoes:'f-medicacoes', alergias:'f-alergias',
+                       tabagismo:'f-tabagismo' };
+function marcarClinicoPreenchido(lista) {
+  lista.forEach(function (chave) {
+    var el = document.getElementById(CLINICO_CAMPOS[chave]);
+    if (!el) return;
+    if (el.dataset.ph0 === undefined) el.dataset.ph0 = el.placeholder || '';
+    el.value = '';
+    el.placeholder = '✓ Preenchido pelo paciente — vai direto ao prontuário do médico';
+    el.readOnly = true;
+    el.classList.add('masked-field');
+    el.dataset.clinlock = '1';
+  });
+  var oc = document.getElementById('clin-origem');
+  if (oc) oc.textContent = '✓ O paciente preencheu online: os campos marcados vão direto ao ' +
+                           'prontuário do médico. Complete apenas os que ficaram livres.';
+}
+function desmarcarClinicoPreenchido() {
+  Object.keys(CLINICO_CAMPOS).forEach(function (chave) {
+    var el = document.getElementById(CLINICO_CAMPOS[chave]);
+    if (!el || el.dataset.clinlock !== '1') return;
+    el.readOnly = false;
+    el.placeholder = el.dataset.ph0 || '';
+    el.classList.remove('masked-field');
+    delete el.dataset.clinlock;
+  });
 }
 
 function travarClinico(ro) {
@@ -693,6 +740,7 @@ function resetBusca() {
   alertar('alerta-busca', '', '');
   ['f-qp','f-antecedentes','f-medicacoes','f-alergias','f-tabagismo','f-obs-clin'].forEach(function(id){ set(id, ''); });
   travarClinico(false);
+  desmarcarClinicoPreenchido(); // (F4)
   var oc = document.getElementById('clin-origem');
   if (oc) oc.textContent = 'Preencha se o paciente não fez o pré-atendimento online.';
 }
@@ -702,10 +750,12 @@ function enviarRecepcao() {
   var nome      = v('f-nome').trim();
   var dn        = v('f-dn').trim();
   var clinica   = v('f-clinica');
+  var tipo      = v('f-tipo');
   var pagamento = v('f-pagamento');
 
   if (!nome || !dn)   { alertar('alerta-envio', 'erro', 'Nome e data de nascimento obrigatórios.'); return; }
   if (!clinica)        { alertar('alerta-envio', 'erro', 'Selecione a clínica.'); return; }
+  if (!tipo)           { alertar('alerta-envio', 'erro', 'Selecione a modalidade do atendimento.'); return; }
   if (!pagamento)      { alertar('alerta-envio', 'erro', 'Informe a forma de pagamento.'); return; }
 
   var payload = {
@@ -714,6 +764,7 @@ function enviarRecepcao() {
     nome:          nome,
     data_nasc:     dn,
     clinica:       clinica,
+    tipo:          tipo,
     cpf:           valorReal('f-cpf'),
     rg:            valorReal('f-rg'),
     endereco:      valorReal('f-endereco'),
@@ -775,7 +826,8 @@ function novoAtendimento() {
   ['f-nome','f-dn','f-cpf','f-rg','f-telefone','f-email','f-endereco','f-cidade',
    'f-valor','f-cpf-pag','f-obs','f-qp','f-antecedentes','f-medicacoes','f-alergias',
    'f-tabagismo','f-obs-clin'].forEach(id => set(id, ''));
-  ['f-clinica','f-pagamento','f-recibo'].forEach(id => {
+  desmarcarClinicoPreenchido(); // (F4)
+  ['f-clinica','f-tipo','f-pagamento','f-recibo'].forEach(id => {
     var el = document.getElementById(id);
     if (el) el.selectedIndex = 0;
   });

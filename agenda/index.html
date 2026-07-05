@@ -79,6 +79,8 @@
       <div><label for="f-clinica">Clínica</label><select id="f-clinica"></select></div>
       <div><label for="f-turno">Turno</label>
         <select id="f-turno"><option>Manhã</option><option>Tarde</option><option>Dia todo</option></select></div>
+      <div><label for="f-regime">Regime</label>
+        <select id="f-regime"><option>Ordem de chegada</option><option>Hora marcada</option></select></div>
       <div><label for="f-vagas">Vagas (opcional)</label><input type="number" id="f-vagas" min="0" placeholder="ex.: 20"></div>
     </div>
     <label for="f-obs">Observações (opcional)</label>
@@ -186,7 +188,9 @@ function render(itens){
       html += '<div class="item '+(it.status==='fechada'?'fechada':'')+'">'+
         '<span class="clin">'+escapar(it.clinica)+'</span>'+
         '<span class="tag '+(it.status==='fechada'?'fechada':'aberta')+'">'+escapar(it.status)+'</span>'+
-        '<span class="meta">'+escapar(it.turno||'')+(it.vagas?' · '+escapar(it.vagas)+' vagas':'')+
+        '<span class="meta">'+escapar(it.turno||'')+
+          (it.regime==='Hora marcada'?' · ⏰ hora marcada':'')+
+          (it.vagas?' · '+escapar(it.vagas)+' vagas':'')+
           (it.obs?' · '+escapar(it.obs):'')+'</span>'+
         '<button class="cinza" onclick="editar(\''+it.data+'\',\''+escapar(it.clinica).replace(/'/g,"\\'")+'\')">✎ Editar</button>'+
       '</div>';
@@ -205,6 +209,7 @@ function editar(data, clinica){
   $('f-data').value = it.data;
   if (sess.perfil === 'amplo') $('f-clinica').value = it.clinica;
   $('f-turno').value = it.turno || 'Dia todo';
+  $('f-regime').value = it.regime || 'Ordem de chegada';
   $('f-vagas').value = it.vagas || '';
   $('f-obs').value = it.obs || '';
   $('form-titulo').textContent = 'Editar data — ' + dataLabel(it.data);
@@ -215,7 +220,7 @@ function editar(data, clinica){
 
 function limparForm(){
   $('f-data').value=''; $('f-vagas').value=''; $('f-obs').value='';
-  $('f-turno').value='Manhã';
+  $('f-turno').value='Manhã'; $('f-regime').value='Ordem de chegada';
   $('form-titulo').textContent='Abrir data de atendimento';
   $('btn-fechar').classList.add('hidden');
   alerta('', '');
@@ -225,7 +230,8 @@ function salvar(status){
   var data = $('f-data').value;
   if(!data){ alerta('erro','Escolha a data.'); return; }
   var payload = { acao:'agenda_salvar', data:data, clinica:$('f-clinica').value,
-                  turno:$('f-turno').value, vagas:$('f-vagas').value.trim(),
+                  turno:$('f-turno').value, regime:$('f-regime').value,
+                  vagas:$('f-vagas').value.trim(),
                   obs:$('f-obs').value.trim(), status: status||'aberta' };
   $('btn-salvar').disabled = true; $('btn-fechar').disabled = true;
   api(payload).then(function(res){
