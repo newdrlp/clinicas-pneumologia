@@ -263,6 +263,11 @@
 <!-- ══ CABEÇALHO ══ -->
 <header>
   <h1>Pneumologia PE · Recepção</h1>
+  <span id="nav-sessao" style="display:none;font-size:.85rem;white-space:nowrap">
+    <a href="portal/" style="color:#fff;text-decoration:none">🏠 Portal</a> &nbsp;·&nbsp;
+    <a href="sala/" style="color:#fff;text-decoration:none">🪑 Sala de espera</a> &nbsp;·&nbsp;
+    <a href="#" onclick="sairSessao();return false" style="color:#cfe0f3;text-decoration:none">Sair</a>
+  </span>
   <span id="badge-usuario"></span>
 </header>
 
@@ -521,9 +526,48 @@ var estado = {
   usuario:       '',
   nomeExibicao:  '',
   clinicaPadrao: '',
+  token:         '',
+  perfil:        '',
   linhaPre:      null,
   dadosPre:      null,
 };
+
+// ══ (F2) SESSÃO COMPARTILHADA — portal / recepção / sala (localStorage, ~12 h) ══
+var SESSAO_KEY = 'pneumo_sessao', SESSAO_HORAS = 11.5;
+function sessaoSalvar(sess) {
+  try { sess.criado_em = Date.now(); localStorage.setItem(SESSAO_KEY, JSON.stringify(sess)); } catch (e) {}
+}
+function sessaoLer() {
+  try {
+    var s = JSON.parse(localStorage.getItem(SESSAO_KEY) || 'null');
+    if (!s || !s.token) return null;
+    if (Date.now() - (s.criado_em || 0) > SESSAO_HORAS * 3600 * 1000) { sessaoLimpar(); return null; }
+    return s;
+  } catch (e) { return null; }
+}
+function sessaoLimpar() { try { localStorage.removeItem(SESSAO_KEY); } catch (e) {} }
+function sairSessao() { sessaoLimpar(); location.reload(); }
+
+function entrarComSessao(sess) {
+  estado.usuario       = sess.usuario;
+  estado.nomeExibicao  = sess.nome;
+  estado.clinicaPadrao = sess.clinica;
+  estado.token         = sess.token  || '';
+  estado.perfil        = sess.perfil || '';
+  document.getElementById('badge-usuario').textContent = '👤 ' + sess.nome;
+  document.getElementById('badge-usuario').style.display = 'block';
+  var nav = document.getElementById('nav-sessao'); if (nav) nav.style.display = 'inline';
+  mostrar('tela-login', false);
+  mostrar('tela-form', true);
+  // Pré-seleciona clínica padrão da recepcionista
+  if (sess.clinica) {
+    var sel = document.getElementById('f-clinica');
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value.indexOf(sess.clinica) >= 0) { sel.selectedIndex = i; break; }
+    }
+  }
+  aplicarPrefillBusca();
+}
 
 // ══ LOGIN ══
 function fazerLogin() {
@@ -538,25 +582,12 @@ function fazerLogin() {
   .then(r => r.json())
   .then(res => {
     if (res.ok) {
-      estado.usuario       = usuario;
-      estado.nomeExibicao  = res.nome_exibicao;
-      estado.clinicaPadrao = res.clinica_padrao;
-      estado.token         = res.token  || '';   // (F1) sessão de 12 h
-      estado.perfil        = res.perfil || '';
-      document.getElementById('badge-usuario').textContent = '👤 ' + res.nome_exibicao;
-      document.getElementById('badge-usuario').style.display = 'block';
-      mostrar('tela-login', false);
-      mostrar('tela-form', true);
-      // Pré-seleciona clínica padrão da recepcionista
-      if (res.clinica_padrao) {
-        var sel = document.getElementById('f-clinica');
-        for (var i = 0; i < sel.options.length; i++) {
-          if (sel.options[i].value.indexOf(res.clinica_padrao) >= 0) {
-            sel.selectedIndex = i; break;
-          }
-        }
-      }
-      aplicarPrefillBusca();
+      // (F2) sessão compartilhada: vale também no portal e na sala, sem relogar
+      var sess = { usuario: usuario, nome: res.nome_exibicao || usuario,
+                   clinica: res.clinica_padrao || '', perfil: res.perfil || '',
+                   token: res.token || '' };
+      sessaoSalvar(sess);
+      entrarComSessao(sess);
     } else {
       alertar('alerta-login', 'erro', res.erro || 'Credenciais inválidas.');
     }
@@ -1112,6 +1143,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById(id);
     if (el) el.addEventListener('focus', function() { prepararEdicaoMascara(el); });
   });
+  // (F2) auto-login: se há sessão compartilhada válida, pula a tela de login
+  var sess = sessaoLer();
+  if (sess) entrarComSessao(sess);
 });
 </script>
 </body>

@@ -98,6 +98,7 @@
   <header>
     <h1>🪑 Sala de Espera</h1>
     <span class="badge" id="badge-usuario"></span>
+    <a href="../portal/" title="Portal da secretária">🏠 Portal</a>
     <a href="../" title="Voltar à recepção">↩ Recepção</a>
     <a href="#" onclick="sair();return false">Sair</a>
   </header>
@@ -175,6 +176,21 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxa5lYHDL1qhP7MOad4TzuJ5ff7HI_7_PMKwB2d5gxNVWFJTJuktcyqL6FswLvMS9c0/exec';
 
 var estado = { usuario:'', nome:'', clinica:'', token:'', perfil:'' };
+
+// ══ (F2) SESSÃO COMPARTILHADA — portal / recepção / sala (localStorage, ~12 h) ══
+var SESSAO_KEY = 'pneumo_sessao', SESSAO_HORAS = 11.5;
+function sessaoSalvar(sess){
+  try{ sess.criado_em = Date.now(); localStorage.setItem(SESSAO_KEY, JSON.stringify(sess)); }catch(e){}
+}
+function sessaoLer(){
+  try{
+    var s = JSON.parse(localStorage.getItem(SESSAO_KEY)||'null');
+    if(!s || !s.token) return null;
+    if(Date.now() - (s.criado_em||0) > SESSAO_HORAS*3600*1000){ sessaoLimpar(); return null; }
+    return s;
+  }catch(e){ return null; }
+}
+function sessaoLimpar(){ try{ localStorage.removeItem(SESSAO_KEY); }catch(e){} }
 var pollTimer = null, tickTimer = null, presencaTimer = null;
 var renderClientMs = 0;       // Date.now() no momento do último render
 var ultimoFetchMs = 0;        // p/ "atualizado há Xs"
@@ -224,7 +240,7 @@ function fazerLogin(){
       if(res.ok){
         aplicarSessao({usuario:u, nome:res.nome_exibicao||u, clinica:res.clinica_padrao||'',
                        token:res.token||'', perfil:res.perfil||''});
-        try{ sessionStorage.setItem('sala_sessao', JSON.stringify(estado)); }catch(e){}
+        sessaoSalvar(estado); // (F2) sessão compartilhada portal/recepção/sala
       } else { alerta('alerta-login','erro',res.erro||'Credenciais inválidas.'); }
     })
     .catch(function(){ alerta('alerta-login','erro','Não foi possível conectar. Tente novamente.'); })
@@ -242,6 +258,7 @@ function aplicarSessao(sess){
 }
 
 function sair(){
+  sessaoLimpar(); // (F2) encerra a sessão compartilhada
   try{ sessionStorage.removeItem('sala_sessao'); }catch(e){}
   if(pollTimer) clearInterval(pollTimer);
   if(tickTimer) clearInterval(tickTimer);
@@ -552,7 +569,13 @@ function soltarOrdenar(chave, alvoChave, depois){
 (function(){
   listaDnD();
   document.addEventListener('click', unlockAudio);   // 1º clique libera o som de chamada
-  try{ var s=sessionStorage.getItem('sala_sessao'); if(s){ aplicarSessao(JSON.parse(s)); } }catch(e){}
+  // (F2) restaura a sessão compartilhada (localStorage); o sessionStorage antigo
+  // é ignorado se não tiver token (sessão pré-F1 não filtra clínica).
+  try{
+    var s = sessaoLer();
+    if(!s){ var v = sessionStorage.getItem('sala_sessao'); if(v){ var o=JSON.parse(v); if(o && o.token) s=o; } }
+    if(s) aplicarSessao(s);
+  }catch(e){}
 })();
 </script>
 </body>
