@@ -409,6 +409,10 @@ function cartao(it, servidorMs){
   var tempoHtml = baseMs!=='' ? '<span class="wait" data-base="'+baseMs+'">…</span> <span class="meta">'+rotuloTempo+'</span>'
                               : (tempoEstatico? '<span class="meta">'+tempoEstatico+'</span>' : '');
 
+  // (07/jul) exclusão: só quem tem perfil AMPLO (Lucas/Andréa ou marcado na planilha)
+  var btnDel = (estado && estado.perfil === 'amplo')
+    ? '<button class="warn" style="background:#c0392b;color:#fff" onclick="excluir(\''+enc(it.chave)+'\',\''+enc(it.nome)+'\')" title="Excluir da fila (acesso amplo)">🗑 Excluir</button>'
+    : '';
   var acoes='';
   if(!fim){
     acoes='<div class="acoes">';
@@ -418,9 +422,10 @@ function cartao(it, servidorMs){
     acoes+='<button class="warn" onclick="mudar(\''+enc(it.chave)+'\',\'faltou\')">Faltou</button>';
     acoes+='<button onclick="abrirQR(\''+enc(it.chave)+'\',\''+enc(it.nome)+'\')" title="Gerar QR p/ o paciente acompanhar no celular">QR</button>';
     acoes+='<a href="../?nome='+encodeURIComponent(it.nome)+'&dn='+encodeURIComponent(it.dn)+'">Editar ficha</a>';
+    acoes+=btnDel;
     acoes+='</div>';
   } else {
-    acoes='<div class="acoes"><button onclick="mudar(\''+enc(it.chave)+'\',\'aguardando\')">↩ Reabrir</button></div>';
+    acoes='<div class="acoes"><button onclick="mudar(\''+enc(it.chave)+'\',\'aguardando\')">↩ Reabrir</button>'+btnDel+'</div>';
   }
 
   return '<div class="item '+tier+(fim?' fim':'')+(arrast?' drag':'')+'"'+dragAttrs+'>'+
@@ -485,6 +490,16 @@ function mudar(chave, status){
   fetchJson({acao:'sala_status', chave:chave, data:val('f-data')||hojeISO(), status:status}, 18000)
     .then(function(r){return r.json();})
     .then(function(res){ if(res.ok) carregarLista(); else alert(res.erro||'Erro ao atualizar.'); })
+    .catch(function(){ alert('Falha de conexão.'); });
+}
+
+// (07/jul) excluir cartão da fila — só perfil amplo (o token vai no fetchJson;
+// o servidor recusa quem não for amplo). NÃO apaga a ficha do prontuário.
+function excluir(chave, nome){
+  if(!confirm('Excluir "'+nome+'" da fila do dia?\n\nRemove o cartão do board. NÃO apaga a ficha do prontuário nem o histórico da recepção.')) return;
+  fetchJson({acao:'sala_remover', chave:chave, data:val('f-data')||hojeISO()}, 18000)
+    .then(function(r){return r.json();})
+    .then(function(res){ if(res.ok) carregarLista(); else alert(res.erro||'Não foi possível excluir.'); })
     .catch(function(){ alert('Falha de conexão.'); });
 }
 
