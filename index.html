@@ -366,7 +366,7 @@
       </select>
     </div>
     <div class="campo">
-      <label>Modalidade *</label>
+      <label>Modalidade</label>
       <select id="f-tipo">
         <option value="">Selecione…</option>
         <option>Consulta 1ª Vez</option>
@@ -756,7 +756,9 @@ function enviarRecepcao() {
 
   if (!nome || !dn)   { alertar('alerta-envio', 'erro', 'Nome e data de nascimento obrigatórios.'); return; }
   if (!clinica)        { alertar('alerta-envio', 'erro', 'Selecione a clínica.'); return; }
-  if (!tipo)           { alertar('alerta-envio', 'erro', 'Selecione a modalidade do atendimento.'); return; }
+  // Modalidade é OPCIONAL (2026-07-06): não bloquear o registro — o campo obrigatório
+  // sem treino bloqueou as recepcionistas e nada chegou à aba recepcao. Capturamos o
+  // tipo quando preenchido; podemos reexigir com UX mais clara após treino.
   if (!pagamento)      { alertar('alerta-envio', 'erro', 'Informe a forma de pagamento.'); return; }
 
   var payload = {
