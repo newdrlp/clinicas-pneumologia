@@ -163,6 +163,12 @@
     <p class="meta" style="margin:0 0 12px">Peça ao paciente para apontar a câmera para o QR.</p>
     <div id="qr-canvas" style="display:flex;justify-content:center;min-height:220px"></div>
     <div id="qr-link" style="word-break:break-all;margin:10px 0;font-size:11px;color:var(--suave)"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button onclick="enviarZap()" style="flex:1;background:#25d366;color:#fff;font-weight:700"
+              title="Abre o WhatsApp com a mensagem pronta — é só escolher o contato do paciente">WhatsApp</button>
+      <button onclick="enviarSms()" style="flex:1;background:#eef2f6;color:var(--azul)"
+              title="Abre o app de SMS do aparelho com a mensagem pronta (sem custo para o sistema)">SMS</button>
+    </div>
     <div style="display:flex;gap:8px">
       <button onclick="copiarLink()" style="flex:1;background:#eef2f6;color:var(--azul)">Copiar link</button>
       <button class="btn-azul" style="flex:1" onclick="fecharQR()">Fechar</button>
@@ -522,6 +528,22 @@ function abrirQR(chave, nome){
 }
 function fecharQR(){ $('qr-modal').classList.add('hidden'); }
 function copiarLink(){ try{ navigator.clipboard.writeText(window._qrUrl||''); }catch(e){} }
+// ══ envio do link ao paciente (F-018): WhatsApp / SMS por URI — sem custo ══
+// Abre o app com a MENSAGEM pronta; o atendente só escolhe o contato. Funciona
+// em qualquer dispositivo de atendente (recepção, Andréa ou o médico).
+function _msgFila(){
+  return 'Acompanhe sua vez na fila do Dr. Lucas pelo celular: ' + (window._qrUrl||'');
+}
+function enviarZap(){
+  if(!window._qrUrl){ alert('Gere o QR primeiro.'); return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(_msgFila()), '_blank');
+}
+function enviarSms(){
+  if(!window._qrUrl){ alert('Gere o QR primeiro.'); return; }
+  // iOS usa 'sms:&body=', Android 'sms:?body=' — detecta o aparelho do atendente
+  var ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  window.location.href = 'sms:' + (ios ? '&' : '?') + 'body=' + encodeURIComponent(_msgFila());
+}
 
 // ══ ARRASTAR (reordenação manual da fila de espera) ══
 function limparMarcadores(){
