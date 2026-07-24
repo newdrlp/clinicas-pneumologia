@@ -123,6 +123,19 @@ function render(res){
   }
   var prox=(res.a_frente===0);
   var etaTxt = prox ? 'Você é o próximo' : ('~'+res.eta_min+' min');
+  // (F-018) hora em que o paciente deve ESTAR NA RECEPÇÃO (vem do servidor,
+  // já com o deslocamento do médico embutido no cálculo)
+  var hora = (res.previsto_em||'').slice(11,16);
+  var horaCard = hora
+    ? '<div class="card" style="background:#e8f5ee;border-color:#bfe3cf">'+
+        '<div class="rotulo">Esteja na recepção por volta de</div>'+
+        '<div class="vez" style="color:#1e8449">~'+escapar(hora)+'</div>'+
+        (res.medico_eta_min>0
+          ? '<div class="rotulo">🚗 O médico está a caminho'+
+            ((res.medico_chega_em||'').slice(11,16)?(' · chega ~'+escapar((res.medico_chega_em||'').slice(11,16))):'')+'</div>'
+          : '')+
+      '</div>'
+    : '';
   c.innerHTML=
     '<div class="card">'+
       (res.senha
@@ -132,11 +145,12 @@ function render(res){
           '<div class="pos">'+(res.posicao||'-')+'º</div>'+
           '<div class="rotulo">'+(prox?'você é o próximo a ser chamado':(res.a_frente+' à sua frente'))+'</div>')+
     '</div>'+
+    horaCard+
     '<div class="grid">'+
       '<div class="mini"><div class="rotulo">Espera estimada</div><div class="v">'+escapar(etaTxt)+'</div></div>'+
       '<div class="mini"><div class="rotulo">Status</div><div class="v" style="font-size:15px">Aguardando</div></div>'+
     '</div>'+
-    (res.eta_min>0?'<p class="rodape" style="margin-top:0">Estimativa baseada no ritmo recente de atendimento. Pode variar.</p>':'');
+    (res.eta_min>0?'<p class="rodape" style="margin-top:0">Estimativa baseada no ritmo recente de atendimento e no deslocamento do médico. Pode variar — chegue alguns minutos antes.</p>':'');
 }
 
 (function(){
