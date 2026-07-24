@@ -1,0 +1,15 @@
+{
+  "name": "Sala de Espera — Pneumologia PE",
+  "short_name": "Sala",
+  "description": "Board da fila do dia (recepção) — Dr. Lucas Pereira de Souza",
+  "start_url": "/sala/",
+  "scope": "/sala/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7fa",
+  "theme_color": "#1a3a5c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
