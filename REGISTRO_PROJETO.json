@@ -24,7 +24,10 @@
       "id": "ajuste-rapido",
       "referencias": [
         "agenda/index.html",
-        "admin/index.html"
+        "agenda/ajuste-rapido.js",
+        "agenda/agenda-publica.js",
+        "backend/AjustesAgenda.js",
+        "docs/AGENDA_REGIONAL.md"
       ],
       "data_criacao": "2026-10-03",
       "titulo": "Ajuste rápido com agenda pública central",

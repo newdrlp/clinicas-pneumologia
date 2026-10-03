@@ -150,8 +150,41 @@
     <div id="lista"><p class="vazio">Carregando…</p></div>
   </div>
 
-</div>
+  <section class="card hidden" id="quick-adjust-card">
+    <h2>Ajuste rápido de atendimento</h2>
+    <p>Adicionar um extra, suspender um turno ou trocar atendimento entre unidades.</p>
+    <form id="quick-adjust-form">
+      <label for="adjustAction">Ação</label>
+      <select id="adjustAction"><option value="extra">Adicionar atendimento extra</option><option value="suspend">Suspender atendimento</option><option value="swap">Trocar atendimento</option></select>
+      <fieldset id="sourceFields" style="margin-top:14px;padding:12px;border:1px solid var(--linha)">
+        <legend>Atendimento a suspender</legend>
+        <label for="sourceUnit">Unidade</label><select id="sourceUnit"></select>
+        <div class="linha-form">
+          <div><label for="sourceDate">Data da suspensão</label><input type="date" id="sourceDate"></div>
+          <div><label for="sourcePeriod">Turno da suspensão</label><select id="sourcePeriod"><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="dia_todo">Dia todo</option><option value="horario">Horário específico</option></select></div>
+          <div id="sourceTimeGroup"><label for="sourceTime">Horário da suspensão</label><input type="time" id="sourceTime"></div>
+        </div>
+      </fieldset>
+      <fieldset id="targetFields" style="margin-top:14px;padding:12px;border:1px solid var(--linha)">
+        <legend>Atendimento extra</legend>
+        <label for="targetUnit">Unidade</label><select id="targetUnit"></select>
+        <div class="linha-form">
+          <div><label for="targetDate">Data do extra</label><input type="date" id="targetDate"></div>
+          <div><label for="targetPeriod">Turno do extra</label><select id="targetPeriod"><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="dia_todo">Dia todo</option><option value="horario">Horário específico</option></select></div>
+          <div id="targetTimeGroup"><label for="targetTime">Horário do extra</label><input type="time" id="targetTime"></div>
+        </div>
+      </fieldset>
+      <label for="adjustNote">Observação interna — não exibida ao paciente</label>
+      <textarea id="adjustNote" rows="3" maxlength="1000" style="width:100%;padding:10px;border:1px solid var(--linha);border-radius:8px"></textarea>
+      <div style="padding:14px;background:var(--bg);border-radius:8px;margin-top:14px"><strong>Preview para o paciente</strong><p id="publicPreview" style="margin-top:8px" aria-live="polite"></p></div>
+      <div class="botoes"><button type="submit" id="saveQuickAdjust">Salvar alteração</button><button type="button" class="cinza" id="clearQuickAdjust">Limpar</button><button type="button" class="cinza" id="refreshQuickAdjust">Atualizar ajustes</button></div>
+      <div id="adjustStatus" class="alerta" role="status"></div>
+    </form>
+    <h3 style="margin-top:20px;font-size:14px">Ajustes registrados</h3>
+    <div id="adjustHistory" style="margin-top:8px;font-size:13px"></div>
+  </section>
 
+</div>
 </main>
 
 <script>
@@ -404,5 +437,7 @@ document.addEventListener('DOMContentLoaded', function(){
   carregar();
 });
 </script>
+<script src="regras-agenda.js"></script>
+<script src="ajuste-rapido.js"></script>
 </body>
 </html>
