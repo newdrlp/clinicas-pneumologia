@@ -9,6 +9,7 @@ Atualizado em: 2026-10-03
 
 ## Em andamento
 - Card de ajuste rápido publicado em /agenda/ e acessível pela sessão de Lucas; preview verificado em produção.
+- Portal: novo card “Dias de atendimento” abaixo de “Agenda”, para Lucas e Andréa, com link direto ao ajuste; verificação da publicação em andamento.
 - Extras gravados pelo novo card com a sessão de Lucas; leitura pública confirmou revisão 2, dois extras e ausência de notas internas/autoria.
 - Testes de turnos, autorização, atomicidade, idempotência, conflitos e privacidade passaram.
 - Entregáveis continuam em andamento até aprovação explícita do usuário.

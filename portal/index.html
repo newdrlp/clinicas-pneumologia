@@ -33,6 +33,7 @@
   .menu a.item, .menu div.item{display:flex;align-items:center;gap:14px;background:var(--card);
     border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:12px;
     text-decoration:none;color:var(--txt)}
+  .menu a.item[hidden]{display:none}
   .menu a.item:hover{border-color:var(--azul);box-shadow:0 1px 6px rgba(26,58,92,.12)}
   .menu .icone{font-size:26px;min-width:34px;text-align:center}
   .menu .titulo{font-weight:700;color:var(--azul)}
@@ -92,6 +93,11 @@
       <span><span class="titulo">Agenda</span><br>
         <span class="desc">Datas abertas por clínica — abrir, editar, fechar. Cada login vê a sua.</span></span>
     </a>
+    <a class="item" id="dias-atendimento" href="../agenda/#quick-adjust-card" hidden>
+      <span class="icone">🗓️</span>
+      <span><span class="titulo">Dias de atendimento</span><br>
+        <span class="desc">Ajustar extras, suspensões e trocas de dias e turnos entre unidades.</span></span>
+    </a>
   </div>
   <p class="rodape">Sessão válida por ~12 h neste aparelho. Use “Sair” em computador compartilhado.</p>
 </div>
@@ -120,6 +126,8 @@ function sairSessao(){ sessaoLimpar(); location.reload(); }
 function $(id){ return document.getElementById(id); }
 
 function mostrarMenu(sess){
+  var usuario = String(sess.usuario || '').trim().toLowerCase();
+  $('dias-atendimento').hidden = sess.perfil !== 'amplo' || ['lucas', 'andrea'].indexOf(usuario) === -1;
   $('tela-login').classList.add('hidden');
   $('tela-menu').classList.remove('hidden');
   $('badge-usuario').textContent = '👤 ' + sess.nome;

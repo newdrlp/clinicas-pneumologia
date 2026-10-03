@@ -1,6 +1,7 @@
 (function(){
   'use strict';
   var units=[],revision=0,requestId=null,loading=false;
+  var abrirPeloPortal=location.hash==='#quick-adjust-card';
   function el(id){return document.getElementById(id);}
   function side(prefix){return {unitId:el(prefix+'Unit').value,date:el(prefix+'Date').value,period:el(prefix+'Period').value,time:el(prefix+'Time').value};}
   function input(){return {action:el('adjustAction').value,source:side('source'),target:side('target'),internalNote:el('adjustNote').value.trim()};}
@@ -36,6 +37,13 @@
         el('adjustHistory').appendChild(row);
       });
       el('quick-adjust-card').classList.remove('hidden');update();
+      if(abrirPeloPortal){
+        abrirPeloPortal=false;
+        await carregamentoInicial;
+        var titulo=el('quick-adjust-card').querySelector('h2');
+        titulo.tabIndex=-1;titulo.focus({preventScroll:true});
+        el('quick-adjust-card').scrollIntoView({block:'start'});
+      }
     }catch(error){status('erro','Não foi possível carregar os ajustes.');}
   }
   el('quick-adjust-form').addEventListener('input',function(){requestId=null;update();});

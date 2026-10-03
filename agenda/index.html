@@ -252,12 +252,13 @@ function montarSelectClinicas(clinicas){
   f.value = atual || '';
 }
 
+var carregamentoInicial;
 function carregar(){
   $('lista').innerHTML = '<p class="vazio">Carregando…</p>';
   var payload = { acao:'agenda_listar' };
   var filtro = $('f-filtro').value;
   if (sess.perfil === 'amplo' && filtro) payload.clinica = filtro;
-  api(payload).then(function(res){
+  return api(payload).then(function(res){
     if(!res.ok){ $('lista').innerHTML = '<p class="vazio">'+escapar(res.erro||'Erro ao carregar.')+'</p>'; return; }
     montarSelectClinicas(res.clinicas||[]);
     ultimaLista  = res.itens || [];
@@ -434,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if (v.length >= 6) v = v.slice(0,5)+'/'+v.slice(5,9);
     this.value = v;
   });
-  carregar();
+  carregamentoInicial = carregar();
 });
 </script>
 <script src="regras-agenda.js"></script>
