@@ -3,24 +3,21 @@ Atualizado em: 2026-10-03
 # Estado atual — rascunho
 
 ## Estável / observado
-- Site existente com páginas por cidade e módulos operacionais.
-- Agenda web central acessível pela sessão de Dr Lucas.
-- admin/index.html redireciona para /agenda/.
+- GitHub Pages serve recepção, agenda e os seis subdomínios por cidade; DNS das unidades aponta para newdrlp.github.io.
+- Extras de 2026-10-08 visíveis nos domínios reais: Limoeiro / Manhã (8h às 12h) e Carpina / Tarde (13h às 17h).
+- Backend da agenda publicado na versão 53; leitura pública sem notas internas e gravação sem sessão recusada.
 
 ## Em andamento
-- Extras de 2026-10-08 gravados pela sessão de Dr Lucas e exibidos na agenda central: Limoeiro / Manhã e Carpina / Tarde. Registro permanece em andamento até aprovação explícita do usuário.
-- Card de ajuste rápido e integração pública implementados; testes locais de regras, autorização, atomicidade e privacidade passaram.
-- Backend publicado na implantação existente da agenda, versão 53.
-- Correção pública do extra do dia 8 enviada a main (1fa3fbc); confirmação de publicação no Netlify ainda pendente.
-- Arquivos de continuidade criados como rascunho, sem decisões aprovadas.
+- Card de ajuste rápido publicado em /agenda/ e acessível pela sessão de Lucas; preview verificado em produção.
+- Conferência da gravação dos extras pelo novo card e de atualização pública.
+- Testes de turnos, autorização, atomicidade, idempotência, conflitos e privacidade passaram.
+- Entregáveis continuam em andamento até aprovação explícita do usuário.
 
 ## Próximos passos
-- Verificar no domínio real a publicação do dia 8 e dos novos scripts.
-- Conferir o card com sessão de Lucas ou Andréa em produção.
-- Manter acompanhamento da integração pública e registrar aprovação somente após confirmação do usuário.
-- Testar regras e publicar as alterações autorizadas.
+- Solicitar revisão do usuário sobre o card e os extras publicados.
+- Marcar como aprovado/concluído somente após confirmação explícita.
 
 ## Bloqueios / dúvidas
-- Fonte do backend confirmada por pull da versão 52; módulos de agenda também preservados em backend/.
-- Formulário antigo de interesse mantém seu endpoint; nova leitura pública usa o endpoint central da agenda.
-- Subdomínios ainda servem HTML anterior após push. Login do Netlify solicita nova autorização de e-mails do GitHub, aguardando confirmação do usuário.
+- Nenhum bloqueio de publicação; tentativa de login no Netlify cancelada.
+- Conta Andréa não foi acessada; autorização verificada pelos testes do servidor.
+- Histórico JSON tem limite preventivo de 45.000 caracteres; arquivamento está descrito em docs/AGENDA_REGIONAL.md.

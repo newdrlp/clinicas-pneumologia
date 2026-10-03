@@ -15,13 +15,13 @@ O painel fica em `/agenda/`; `/admin/` e `/admin.html` encaminham para ele. Entr
 
 ## Fontes e publicação
 
-`agenda/regras-agenda.js` e `agenda/agenda-publica.js` são as fontes comuns. As cópias dentro das pastas por cidade permitem publicar cada pasta separadamente no Netlify. Após alterar as fontes, execute `node scripts/sync-public.cjs`.
+`agenda/regras-agenda.js` e `agenda/agenda-publica.js` são as fontes comuns. As cópias dentro das pastas por cidade permitem publicar cada pasta separadamente no GitHub Pages. Após alterar as fontes, execute `node scripts/sync-public.cjs`.
 
 `backend/Agenda.js` e `backend/AjustesAgenda.js` são as fontes de agenda do Apps Script. Os outros módulos do backend permanecem no projeto original em `D:\temp\CLAUDE\apps-script-pre-atendimento`. A alteração foi construída sobre a versão 52 e publicada somente na implantação da recepção/agenda, como versão 53. As outras implantações não foram alteradas.
 
 Antes de atualizar o Apps Script, faça um pull isolado da versão em produção e confira diferenças com HEAD; preserve mudanças de outros módulos. Copie somente os dois módulos de agenda, execute os testes, `clasp push` e atualize a implantação existente da agenda com `clasp deploy --deploymentId <ID existente>`. Nunca publique backups, tokens ou arquivos de diagnóstico.
 
-No Netlify, publique as pastas correspondentes aos sites existentes. Um push só publica automaticamente quando o site tem integração Git configurada. Após publicar, confirme no domínio real que `agenda-publica.js` está servido e que a página mostra a data correta.
+As unidades são publicadas por repositórios separados `newdrlp/pneumologia-pe-<cidade>`; o GitHub Pages usa main e a raiz /. Copie os arquivos da unidade para o repositório correspondente, preservando CNAME, .nojekyll e páginas auxiliares, e faça commit/push. O painel é publicado pelo repositório `newdrlp/clinicas-pneumologia`. Um push somente no repositório principal não atualiza os seis subdomínios. Após publicar, confirme no domínio real que `agenda-publica.js` está servido e que a página mostra a data correta. O DNS no Wix já aponta para GitHub Pages; não precisa ser modificado a cada publicação.
 
 ## Testes locais
 

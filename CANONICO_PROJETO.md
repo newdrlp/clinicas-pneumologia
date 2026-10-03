@@ -15,10 +15,12 @@ Pacientes das unidades regionais de Pernambuco e equipe operacional. O novo ajus
 - admin/index.html redireciona para agenda/index.html.
 - Agenda operacional usa Google Apps Script, com ações agenda_listar e agenda_salvar e armazenamento em planilha conforme comentário do projeto.
 - Portal usa token assinado validado no servidor. Novo ajuste exige usuário lucas ou andrea com perfil amplo.
-- Páginas por cidade têm leitura central em JSON e regras compartilhadas para recorrência, datas explícitas e exceções. Ajustes são JSON na planilha existente; notas internas não entram na leitura pública. Publicação do frontend ainda em verificação.
+- Páginas por cidade têm leitura central em JSON e regras compartilhadas para recorrência, datas explícitas e exceções. Ajustes são JSON na planilha existente; notas internas não entram na leitura pública. Frontend publicado nos seis subdomínios; confirmação operacional permanece aguardando aprovação do usuário.
 - Detalhes operacionais e testes: docs/AGENDA_REGIONAL.md.
 - Repositório: https://github.com/newdrlp/clinicas-pneumologia.git, branch main.
-- Netlify informado pelo usuário; configuração e vínculo de publicação ainda não verificados.
+- Publicação confirmada: GitHub Pages. Recepção/agenda usam o repositório clinicas-pneumologia; cada subdomínio de unidade usa seu próprio repositório pneumologia-pe-<cidade>, branch main, raiz /.
+- Wix é usado pelo usuário; os registros de migração das unidades documentam DNS no Wix com CNAME para newdrlp.github.io. Nenhuma configuração Wix foi alterada. Netlify não é usado.
+- Mapeamento verificado e origens: docs/PUBLICACAO_UNIDADES.md.
 
 ## Convenções
 Preservar estrutura e comportamento existentes; mudanças incrementais. Commits convencionais. STATUS.md contém apenas estado atual. DECISOES.md é append-only e exige confirmação explícita para cada entrada. REGISTRO_PROJETO.json mantém o schema solicitado. Arquivos de ferramenta devem apenas apontar para este documento.
