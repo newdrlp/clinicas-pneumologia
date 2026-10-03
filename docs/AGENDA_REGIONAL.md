@@ -1,6 +1,6 @@
 # Agenda regional e ajuste rápido
 
-O painel fica em `/agenda/`; `/admin/` e `/admin.html` encaminham para ele. Entre pelo Portal com uma conta existente. O ajuste rápido usa a sessão assinada do servidor e permite somente os usuários `lucas` e `andrea`, ambos com perfil `amplo`. Não usa o nome de exibição como autorização.
+O painel fica em `/agenda/`; `/admin/` e `/admin.html` encaminham para ele. Entre pelo Portal com uma conta existente. O card “Dias de atendimento”, abaixo de “Agenda”, aparece para Lucas e Andréa e abre diretamente o ajuste rápido após o carregamento dos dados. O ajuste rápido usa a sessão assinada do servidor e permite somente os usuários `lucas` e `andrea`, ambos com perfil `amplo`. Não usa o nome de exibição como autorização.
 
 ## Funcionamento
 
