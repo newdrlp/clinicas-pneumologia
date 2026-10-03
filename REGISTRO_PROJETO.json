@@ -1,0 +1,45 @@
+{
+  "projeto": {
+    "id": "pneumologia-pe",
+    "nome": "Pneumologia PE / Pré-agendamento por unidade",
+    "atualizado_em": "2026-10-03"
+  },
+  "entregaveis": [
+    {
+      "dependencias": [],
+      "status": "rascunho",
+      "id": "contexto",
+      "referencias": [
+        "CANONICO_PROJETO.md",
+        "STATUS.md",
+        "DECISOES.md"
+      ],
+      "data_criacao": "2026-10-03",
+      "titulo": "Arquivos de continuidade",
+      "data_atualizacao": "2026-10-03"
+    },
+    {
+      "dependencias": [],
+      "status": "andamento",
+      "id": "ajuste-rapido",
+      "referencias": [
+        "agenda/index.html",
+        "admin/index.html"
+      ],
+      "data_criacao": "2026-10-03",
+      "titulo": "Ajuste rápido com agenda pública central",
+      "data_atualizacao": "2026-10-03"
+    },
+    {
+      "dependencias": [],
+      "status": "andamento",
+      "id": "extra-2026-10-08",
+      "referencias": [
+        "https://recepcao.pneumologia-pe.com.br/agenda/"
+      ],
+      "data_criacao": "2026-10-03",
+      "titulo": "Extra de Limoeiro manhã e Carpina tarde",
+      "data_atualizacao": "2026-10-03"
+    }
+  ]
+}
