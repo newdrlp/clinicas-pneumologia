@@ -41,3 +41,29 @@ assert.equal(server.ajusteAdmin_(other).ok,false);
 assert.equal(server.ajustePodeEditar_({usuario:'andrea',perfil:'amplo'}),true);
 for(const file of ['agenda-publica.js','ajuste-rapido.js','regras-agenda.js','AjustesAgenda.js'])new vm.Script(fs.readFileSync(base+(file==='AjustesAgenda.js'?'/backend/':'/agenda/')+file,'utf8'));
 console.log('OK: turnos, dia todo, horários, unidades inativas, reabertura, atomicidade, autorização, datas inválidas, lock, idempotência, conflitos e privacidade.');
+
+const alternativeUnits=[
+  {id:'local',active:true,coordinates:{lat:0,lng:0}},
+  {id:'perto',active:true,coordinates:{lat:0,lng:.1}},
+  {id:'longe',active:true,coordinates:{lat:0,lng:1}},
+  {id:'inativa',active:false,coordinates:{lat:0,lng:.01}}
+];
+const alternativesSlots=[
+  {unitId:'local',date:'2026-10-08',period:'tarde'},
+  {unitId:'perto',date:'2026-10-08',period:'tarde'},
+  {unitId:'longe',date:'2026-10-06',period:'manha'},
+  {unitId:'inativa',date:'2026-10-04',period:'manha'}
+];
+assert.equal(c.AgendaRegional.nearestAlternative(alternativesSlots,alternativeUnits,'local').unit.id,'perto');
+assert.equal(c.AgendaRegional.nearestAlternative(alternativesSlots,alternativeUnits,'local',{lat:0,lng:1}).unit.id,'longe');
+assert.equal(c.AgendaRegional.nearestAlternative([],alternativeUnits,'local'),null);
+assert.equal(c.AgendaRegional.nearestAlternative(alternativesSlots.filter(s=>s.unitId!=='perto'),alternativeUnits,'local').unit.id,'longe');
+const tied=alternativeUnits.map(u=>u.id==='longe'?{...u,coordinates:{lat:0,lng:-.1}}:u);
+assert.equal(c.AgendaRegional.nearestAlternative(alternativesSlots,tied,'local').unit.id,'longe');
+const regional=alternativeUnits.filter(u=>u.active).map(u=>({...u,frequency:7,weekday:4,periods:['tarde']}));
+const suspended={unitId:'perto',date:'2026-10-08',period:'dia_todo',type:'suspend'};
+let resolved=c.AgendaRegional.resolve({today:'2026-10-03',units:regional,exceptions:[suspended]},14);
+assert.equal(c.AgendaRegional.nearestAlternative(resolved,regional,'local').slot.date,'2026-10-15');
+resolved=c.AgendaRegional.resolve({today:'2026-10-03',units:regional,exceptions:[suspended,{...suspended,date:'2026-10-07',period:'manha',type:'extra'}]},14);
+assert.equal(c.AgendaRegional.nearestAlternative(resolved,regional,'local').slot.date,'2026-10-07');
+console.log('OK: única alternativa próxima, geolocalização, desempate, inativas, ausência de datas, extras e suspensões.');

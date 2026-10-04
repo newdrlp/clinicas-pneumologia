@@ -11,7 +11,8 @@ O painel fica em `/agenda/`; `/admin/` e `/admin.html` encaminham para ele. Entr
 - `Dia todo` abrange manhã e tarde. Uma suspensão por horário específico remove apenas um atendimento com aquele horário exato; suspender manhã ou tarde também remove horários específicos dentro do respectivo turno.
 - Um extra posterior pode reabrir um turno suspenso. Repetir a mesma tentativa de gravação não duplica a operação. Edições sobre uma revisão antiga são recusadas.
 - As páginas consultam o servidor ao abrir, ao voltar para a aba e a cada minuto enquanto visíveis. WhatsApp recebe cidade, data e turno; a equipe confirma a disponibilidade.
-- As sugestões incluem unidades ativas com disponibilidade, ordenadas por distância e, em empate, próxima data.
+- A sugestão mostra somente a outra unidade ativa mais próxima com disponibilidade; distância é o critério principal e próxima data desempata. A data apresentada é a próxima dessa unidade, incluindo extras e suspensões da agenda central.
+- Sem geolocalização, a cidade da página é a referência e a distância indica “km de <cidade>”. A localização real, quando disponível, recalcula a opção e indica “km de você”.
 
 ## Fontes e publicação
 
