@@ -12,7 +12,7 @@ Atualizado em: 2026-10-03
 - Portal: novo card “Dias de atendimento” abaixo de “Agenda”, para Lucas e Andréa, com link direto ao ajuste; card e abertura direta verificados em produção com a sessão de Lucas.
 - Extras gravados pelo novo card com a sessão de Lucas; leitura pública confirmou revisão 2, dois extras e ausência de notas internas/autoria.
 - Testes de turnos, autorização, atomicidade, idempotência, conflitos e privacidade passaram.
-- Alternativas das landings: somente a opção mais próxima, conforme correção do usuário; geolocalização com referência explícita. Testes passaram; verificação da publicação em andamento.
+- Alternativas das landings: somente a opção mais próxima, conforme correção do usuário; geolocalização com referência explícita. Testes passaram; fontes publicadas nos seis domínios e apresentação verificada em Limoeiro e Carpina.
 - Entregáveis continuam em andamento até aprovação explícita do usuário.
 
 ## Próximos passos
