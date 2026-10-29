@@ -2,7 +2,7 @@
   "projeto": {
     "id": "pneumologia-pe",
     "nome": "Pneumologia PE / Pré-agendamento por unidade",
-    "atualizado_em": "2026-10-03"
+    "atualizado_em": "2026-10-29"
   },
   "entregaveis": [
     {
@@ -45,6 +45,19 @@
       "data_criacao": "2026-10-03",
       "titulo": "Extra de Limoeiro manhã e Carpina tarde",
       "data_atualizacao": "2026-10-03"
+    },
+    {
+      "id": "recepcao-medidas-mir",
+      "titulo": "Peso, altura e tabagismo da recepção ao prontuário e PR MIR",
+      "status": "andamento",
+      "data_criacao": "2026-10-29",
+      "data_atualizacao": "2026-10-29",
+      "dependencias": [],
+      "referencias": [
+        "docs/MEDIDAS_RECEPCAO.md",
+        "medidas-recepcao.js",
+        "tests/recepcao-medidas.cjs"
+      ]
     }
   ]
 }

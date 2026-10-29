@@ -1,13 +1,14 @@
-Atualizado em: 2026-10-03
+Atualizado em: 2026-10-29
 
 # Estado atual — rascunho
 
 ## Estável / observado
 - GitHub Pages serve recepção, agenda e os seis subdomínios por cidade; DNS das unidades aponta para newdrlp.github.io.
 - Extras de 2026-10-08 visíveis nos domínios reais: Limoeiro / Manhã (8h às 12h) e Carpina / Tarde (13h às 17h).
-- Backend da agenda publicado na versão 53; leitura pública sem notas internas e gravação sem sessão recusada.
+- Backend compartilhado recepção/agenda publicado na versão 54 (agenda preservada); leitura pública sem notas internas e gravação sem sessão recusada.
 
 ## Em andamento
+- Recepção: peso/altura/tabagismo opcionais integrados à Identificação e ao PR MIR pelo Painel do Dia. Servidor54, fontes desktop instalados, frontend preparado para publicação. Testes sintéticos passaram; conferência operacional de Lucas pendente. Detalhes: docs/MEDIDAS_RECEPCAO.md.
 - Card de ajuste rápido publicado em /agenda/ e acessível pela sessão de Lucas; preview verificado em produção.
 - Portal: novo card “Dias de atendimento” abaixo de “Agenda”, para Lucas e Andréa, com link direto ao ajuste; card e abertura direta verificados em produção com a sessão de Lucas.
 - Extras gravados pelo novo card com a sessão de Lucas; leitura pública confirmou revisão 2, dois extras e ausência de notas internas/autoria.

@@ -426,6 +426,26 @@
     <div class="secao-titulo">
       <span class="icone">🫁</span> Dados clínicos
     </div>
+    <div class="campo">
+      <label for="f-tabagismo-mir">Tabagismo</label>
+      <select id="f-tabagismo-mir">
+        <option value="">Não informado</option>
+        <option value="Não-fumante">Nunca fumou</option>
+        <option value="Fumante">Fumante</option>
+        <option value="Ex-fumante">Ex-fumante</option>
+      </select>
+    </div>
+    <div class="linha-dupla" id="medidas-recepcao">
+      <div class="campo">
+        <label for="f-peso">Peso (kg)</label>
+        <input type="text" id="f-peso" inputmode="decimal" placeholder="Ex.: 68,5" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="f-altura">Altura (cm)</label>
+        <input type="text" id="f-altura" inputmode="decimal" placeholder="Ex.: 170" autocomplete="off">
+      </div>
+    </div>
+    <p class="hint" style="display:block;margin-top:-6px">Tabagismo, peso e altura são opcionais. Informe as medidas de hoje; deixe em branco se não foram coletadas.</p>
     <p id="clin-origem" style="color:var(--sub);font-size:.8rem;margin:-4px 0 8px">Preencha se o paciente não fez o pré-atendimento online.</p>
     <div class="campo">
       <label>Queixa principal</label>
@@ -446,8 +466,8 @@
       </div>
     </div>
     <div class="campo">
-      <label>Tabagismo / exposições</label>
-      <input type="text" id="f-tabagismo" placeholder="Ex.: ex-fumante, 20 anos-maço">
+      <label>Exposições / observações de tabagismo</label>
+      <input type="text" id="f-tabagismo" placeholder="Ex.: exposição a poeira ou fumaça">
     </div>
     <div class="campo">
       <label>Observações clínicas</label>
@@ -534,6 +554,7 @@
 
 </main>
 
+<script src="medidas-recepcao.js"></script>
 <script>
 // ══ CONFIGURAÇÃO ══
 // Cole aqui a URL do Recepcao.gs após implantar como App da Web
@@ -670,6 +691,7 @@ function buscarPaciente() {
 }
 
 function preencherDados(d) {
+  RecepcaoMedidas.preencher(d);
   limparPistas();
   // Campos completos podem vir do pré-atendimento recente. Dados históricos entram como máscara no próprio campo.
   if (d.cidade && !v('f-cidade')) set('f-cidade', d.cidade);
@@ -734,6 +756,7 @@ function travarClinico(ro) {
   });
 }
 function resetBusca() {
+  RecepcaoMedidas.limpar();
   limparPistas();
   estado.linhaPre = null;
   estado.dadosPre = null;
@@ -761,8 +784,14 @@ function enviarRecepcao() {
   // tipo quando preenchido; podemos reexigir com UX mais clara após treino.
   if (!pagamento)      { alertar('alerta-envio', 'erro', 'Informe a forma de pagamento.'); return; }
 
+  var medidas;
+  try {medidas=RecepcaoMedidas.ler();}
+  catch(e) {alertar('alerta-envio','erro',e.message);return;}
   var payload = {
     acao:          'salvar',
+    tabagismo_mir: medidas.tabagismo_mir,
+    peso_kg:       medidas.peso_kg,
+    altura_cm:     medidas.altura_cm,
     recepcionista: estado.nomeExibicao,
     nome:          nome,
     data_nasc:     dn,
@@ -826,6 +855,7 @@ function enviarRecepcao() {
 
 // ══ NOVO ATENDIMENTO ══
 function novoAtendimento() {
+  RecepcaoMedidas.limpar();
   ['f-nome','f-dn','f-cpf','f-rg','f-telefone','f-email','f-endereco','f-cidade',
    'f-valor','f-cpf-pag','f-obs','f-qp','f-antecedentes','f-medicacoes','f-alergias',
    'f-tabagismo','f-obs-clin'].forEach(id => set(id, ''));
