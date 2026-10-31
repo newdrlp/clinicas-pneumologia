@@ -14,15 +14,17 @@
   var api = {
     numero:numero,
     ler:function() {
+      var sexo=campo('f-sexo') ? campo('f-sexo').value : '';
+      if(sexo && ['Masculino','Feminino'].indexOf(sexo)<0)throw new Error('Confira o sexo.');
       var tab=campo('f-tabagismo-mir').value;
       if(tab && ['Não-fumante','Fumante','Ex-fumante'].indexOf(tab)<0)throw new Error('Confira o tabagismo.');
       return {peso_kg:numero(campo('f-peso').value,.3,400,'o peso em kg'),
-              altura_cm:numero(campo('f-altura').value,30,250,'a altura em cm'),tabagismo_mir:tab};
+              altura_cm:numero(campo('f-altura').value,30,250,'a altura em cm'),tabagismo_mir:tab,sexo:sexo};
     },
-    limpar:function() {['f-peso','f-altura','f-tabagismo-mir'].forEach(function(id){if(campo(id)) campo(id).value='';});},
+    limpar:function() {['f-peso','f-altura','f-tabagismo-mir','f-sexo'].forEach(function(id){if(campo(id)) campo(id).value='';});},
     preencher:function(d) {
       if(nome(d.nome)!==nome(campo('f-nome').value) || dn(d.data_nasc)!==dn(campo('f-dn').value))return;
-      [['f-peso','peso_kg'],['f-altura','altura_cm'],['f-tabagismo-mir','tabagismo_mir']].forEach(function(par){
+      [['f-peso','peso_kg'],['f-altura','altura_cm'],['f-tabagismo-mir','tabagismo_mir'],['f-sexo','sexo']].forEach(function(par){
         var el=campo(par[0]);
         if(el && !el.value && d[par[1]]!=null) el.value=String(d[par[1]]).replace('.',',');
       });

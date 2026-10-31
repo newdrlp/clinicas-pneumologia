@@ -339,6 +339,14 @@
       <input type="text" id="f-dn" placeholder="DD/MM/AAAA"
              maxlength="10" oninput="mascaraDN(this); resetBusca()">
     </div>
+    <div class="campo">
+      <label for="f-sexo">Sexo</label>
+      <select id="f-sexo">
+        <option value="">Não selecionado</option>
+        <option value="Masculino">Masculino</option>
+        <option value="Feminino">Feminino</option>
+      </select>
+    </div>
     <button class="btn btn-secundario" id="btn-buscar" onclick="buscarPaciente()">
       <span class="spinner" id="sp-buscar"></span>
       🔍 Verificar ficha existente
@@ -554,7 +562,7 @@
 
 </main>
 
-<script src="medidas-recepcao.js"></script>
+<script src="medidas-recepcao.js?v=20261030-sexo"></script>
 <script>
 // ══ CONFIGURAÇÃO ══
 // Cole aqui a URL do Recepcao.gs após implantar como App da Web
@@ -790,6 +798,7 @@ function enviarRecepcao() {
   var payload = {
     acao:          'salvar',
     tabagismo_mir: medidas.tabagismo_mir,
+    sexo: medidas.sexo,
     peso_kg:       medidas.peso_kg,
     altura_cm:     medidas.altura_cm,
     recepcionista: estado.nomeExibicao,
